@@ -194,6 +194,9 @@ Monitoring
 - :ref:`debops.librenms`
 - :ref:`debops.monit`
 - :ref:`debops.proc_hidepid`
+- :ref:`debops.prometheus_server`
+- :ref:`debops.prometheus_exporters`
+- :ref:`debops.prometheus_alertmanager`
 - :ref:`debops.snmpd`
 - ``debops.smstools``
 

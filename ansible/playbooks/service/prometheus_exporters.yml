@@ -1,0 +1,43 @@
+---
+
+- name: 'Manage Prometheus exporters'
+  hosts: [ 'debops_service_prometheus_exporters' ]
+  become: True
+
+  environment: '{{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}'
+  roles:
+    - role: debops.etc_services
+      tags: [ 'role::etc_services' ]
+      etc_services__dependent_list: '{{ prometheus_exporters__etc_services__dependent_list }}'
+
+    - role: debops.apt_preferences
+      tags: [ 'role::apt_preferences', 'skip::apt_preferences' ]
+      apt_preferences__dependent_list:
+        - '{{ nginx__apt_preferences__dependent_list }}'
+        - '{{ golang__apt_preferences__dependent_list }}'
+      when: prometheus_exporters__nginx
+
+    - role: debops.golang
+      tags: [ 'role::golang', 'skip::golang' ]
+
+    - role: debops.ferm
+      tags: [ 'role::ferm', 'role::prometheus' ]
+      ferm__dependent_rules:
+        - '{{ prometheus_exporters__ferm__dependent_rules }}'
+        - '{{ nginx__ferm__dependent_rules if prometheus_exporters__nginx else [] }}'
+
+    - role: debops.nginx
+      tags: [ 'role::nginx' ]
+      nginx__dependent_servers: '{{ prometheus_exporters__nginx__dependent_servers }}'
+      nginx__dependent_htpasswd: '{{ prometheus_exporters__nginx__dependent_htpasswd }}'
+      when: prometheus_exporters__nginx
+
+    - role: debops.mariadb
+      tags: [ 'role::mariadb', 'role::prometheus_exporters' ]
+      mariadb__dependent_users: '{{ prometheus_exporter__mysql__dependencies }}'
+      when: ('mysqld' in prometheus_exporters__exporters)
+
+    - role: debops.prometheus_exporters
+      tags: [ 'role::prometheus_exporters' ]

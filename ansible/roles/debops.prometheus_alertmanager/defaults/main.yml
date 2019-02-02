@@ -1,0 +1,221 @@
+---
+# .. vim: foldmarker=[[[,]]]:foldmethod=marker
+
+# debops.prometheus_alertmanager default variables [[[
+# ================================================
+
+# .. contents:: Sections
+#    :local:
+
+# Packages and installation [[[
+# -----------------------------
+
+# .. envvar:: prometheus_alertmanager__base_packages [[[
+#
+# List of base packages to install.
+prometheus_alertmanager__base_packages:
+  - prometheus-alertmanager
+                                                                   # ]]]
+# .. envvar:: prometheus_alertmanager__packages [[[
+#
+# List of additional APT packages to install with prometheus.
+prometheus_alertmanager__packages: []
+                                                                   # ]]]
+                                                                   # ]]]
+# Prometheus Alertmanager Configuration [[[
+# -------------------------------------
+
+# .. envvar:: prometheus_alertmanager__deploy_state [[[
+#
+# Set to `absent` to disable and uninstall this role
+prometheus_alertmanager__deploy_state: "present"
+                                                                   # ]]]
+# .. envvar:: prometheus_alertmanager__default_configs [[[
+#
+# Sample configuration.
+# See `prometheus configuration`_ for documentation.
+prometheus_alertmanager__default_configs:
+  global:
+    # The auth token for Hipchat.
+    hipchat_auth_token: '1234556789'
+    # Alternative host for Hipchat.
+    hipchat_url: 'https://hipchat.foobar.org/'
+  # The directory from which notification templates are read.
+  templates:
+    - '/etc/prometheus/alertmanager_templates/*.tmpl'
+
+  # The root route on which each incoming alert enters.
+  route:
+    # The labels by which incoming alerts are grouped together. For example,
+    # multiple alerts coming in for cluster=A and alertname=LatencyHigh would
+    # be batched into a single group.
+    group_by: ['alertname', 'cluster', 'service']
+    # When a new group of alerts is created by an incoming alert, wait at
+    # least 'group_wait' to send the initial notification.
+    # This way ensures that you get multiple alerts for the same group that start
+    # firing shortly after another are batched together on the first
+    # notification.
+    group_wait: 30s
+    # When the first notification was sent, wait 'group_interval' to send a batch
+    # of new alerts that started firing for that group.
+    group_interval: 5m
+    # If an alert has successfully been sent, wait 'repeat_interval' to
+    # resend them.
+    repeat_interval: 3h
+    # A default receiver
+    receiver: root
+    # All the above attributes are inherited by all child routes and can
+    # overwritten on each.
+  # Inhibition rules allow to mute a set of alerts given that another alert is
+  # firing.
+  # We use this to mute any warning-level notifications if the same alert is
+  # already critical.
+  inhibit_rules:
+    - source_match:
+        severity: 'critical'
+      target_match:
+        severity: 'warning'
+      # Apply inhibition if the alertname is the same.
+      equal: ['alertname', 'cluster', 'service']
+
+                                                                   # ]]]
+# .. envvar:: prometheus_alertmanager__smtp_enable [[[
+#
+# The smarthost and SMTP sender used for mail notifications.
+prometheus_alertmanager__smtp_enabled: True
+                                                                   # ]]]
+# .. envvar:: prometheus_alertmanager__smtp_config [[[
+#
+# The smarthost and SMTP sender used for mail notifications.
+# More info at `prometheus configuration (configuration-file)`_
+prometheus_alertmanager__smtp_config:
+  global:
+    # The smarthost and SMTP sender used for mail notifications.
+    smtp_smarthost: 'localhost:25'
+    smtp_from: 'alertmanager@{{ ansible_fqdn }}'
+  receivers:
+    - name: 'root'
+      email_configs:
+        - to: 'root@{{ ansible_domain }}'
+                                                                   # ]]]
+# .. envvar:: prometheus_alertmanager__configs [[[
+#
+# Config which will be managed on all hosts in the Ansible
+# inventory
+prometheus_alertmanager__configs: {}
+                                                                   # ]]]
+# .. envvar:: prometheus_alertmanager__group_configs [[[
+#
+# Config which will be managed on specific groups in the Ansible
+# inventory.
+prometheus_alertmanager__group_configs: {}
+                                                                   # ]]]
+# .. envvar:: prometheus_alertmanager__host_configs [[[
+#
+# Config which will be managed on specific hosts in the Ansible
+# inventory.
+prometheus_alertmanager__host_configs: {}
+
+# .. envvar:: prometheus_alertmanager__combined_configs [[[
+#
+# List which combines all of the config variables and is used
+# in the configuration template.
+prometheus_alertmanager__combined_configs: '{{ prometheus_alertmanager__default_configs | combine(
+                                         ( prometheus_alertmanager__smtp_config if prometheus_alertmanager__smtp_enabled else {})
+                                       , prometheus_alertmanager__configs
+                                       , prometheus_alertmanager__group_configs
+                                       , prometheus_alertmanager__host_configs ) }}'
+                                                                   # ]]]
+                                                                   # ]]]
+                                                                   # ]]]
+# Ngninx Proxy [[[
+# ------------
+#
+# This is soposed to secure the access to the prometheus alertmanager
+# More details at :ref:`nginx__ref_default_variable_details`
+
+# .. envvar:: prometheus_alertmanager__nginx [[[
+#
+# Enables an nginx proxy for the prometheus alertmanager
+prometheus_alertmanager__nginx: False
+                                                                   # ]]]
+# .. envvar:: prometheus_alertmanager__domain [[[
+#
+# Domain to use for vserver on nginx proxy
+prometheus_alertmanager__domain: '{{ ansible_fqdn }}'
+                                                                   # ]]]
+# .. envvar:: prometheus_alertmanager__nginx__dependent_servers [[[
+#
+# nginx configuration is enabled whenn :envvar:`prometheus_alertmanager__nginx` is true
+prometheus_alertmanager__nginx__dependent_servers:
+  - enabled: '{{ prometheus_alertmanager__nginx }}'
+    name: [ '{{ prometheus_alertmanager__domain }}' ]
+    type: 'proxy'
+    listen: False
+    listen_ssl: [ '[::]:19093' ]
+    proxy_pass: 'http://localhost:9093'
+    auth_basic: True
+    auth_basic_name: 'prometheus_alertmanager'
+                                                                   # ]]]
+# .. envvar:: prometheus_alertmanager__nginx__dependent_htpasswd [[[
+#
+# Create base auth for this service
+prometheus_alertmanager__nginx__dependent_htpasswd:
+  - name: 'prometheus_alertmanger'
+    users:
+      - 'monitor'
+                                                                   # ]]]
+                                                                   # ]]]
+# Role-dependent configuration [[[
+# ----------------------------
+
+# .. envvar:: prometheus_alertmanager__accept_any [[[
+#
+# Make the prometheus alertmanager aviable under the port 9093
+prometheus_alertmanager__accept_any: False
+                                                                   # ]]]
+# .. envvar:: prometheus_alertmanager__allow [[[
+#
+# List of IP addresses or CIDR subnets which can access the prometheus alertmanager
+# By default access is from the net is forbidden
+prometheus_alertmanager__allow: []
+                                                                   # ]]]
+# .. envvar:: prometheus_alertmanager__ferm__dependent_rules [[[
+#
+# Ferm rules
+prometheus_alertmanager__ferm__dependent_rules:
+  - name: 'prometheus_alertmanager'
+    type: 'accept'
+    dport: '{{ 19093 if prometheus_alertmanager__nginx else 9093 }}'
+    accept_any: '{{ prometheus_alertmanager__accept_any }}'
+    by_role: 'debops.prometheus_alertmanager'
+    rule_state: '{{ prometheus_alertmanager__deploy_state }}'
+                                                                   # ]]]
+# .. envvar:: prometheus_alertmanager__tcpwrappers__dependent_allow [[[
+#
+# Configuration for the debops.tcpwrappers Ansible role.
+prometheus_alertmanager__tcpwrappers__dependent_allow:
+  - daemon: 'prometheus-alarmmanger'
+    client: '{{ prometheus_alertmanager__allow }}'
+    accept_any: '{{ prometheus_alertmanager__accept_any }}'
+    filename: 'prometheus-alarmmanger'
+                                                                   # ]]]
+# .. envvar:: prometheus_alertmanager__etc_services__dependent_list [[[
+#
+# Configuration for :ref:`debops.etc_services` role. It will set up
+# a entry in :file:`/etc/services`.
+prometheus_alertmanager__etc_services__dependent_list:
+  - name: 'prom-alert'
+    port: 9093
+    comment: 'Prometheus alertmanager for metric providing'
+  - name: 'prom-https-alert'
+    port: 19093
+    comment: 'Prometheus alertmanager for metric providing over https'
+                                                                   # ]]]
+                                                                   # ]]]
+# .. Documentation, external links [[[
+
+# .. _`prometheus configuration`: https://prometheus.io/docs/alerting/configuration/
+# .. _`prometheus configuration (configuration-file)`: https://prometheus.io/docs/alerting/configuration/#configuration-file
+                                                                   # ]]]
+                                                                   # ]]]

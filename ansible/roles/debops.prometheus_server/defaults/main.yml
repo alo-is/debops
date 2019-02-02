@@ -1,0 +1,243 @@
+---
+# .. vim: foldmarker=[[[,]]]:foldmethod=marker
+
+# debops.prometheus_server default variables [[[
+# ==========================================
+
+# .. contents:: Sections
+#    :local:
+
+# Packages and installation [[[
+# -------------------------
+
+# .. envvar:: prometheus_server__base_packages [[[
+#
+# List of base packages to install.
+prometheus_server__base_packages:
+  - prometheus
+                                                                   # ]]]
+# .. envvar:: prometheus_server__packages [[[
+#
+# List of additional APT packages to install with prometheus.
+prometheus_server__packages: []
+                                                                   # ]]]
+# .. envvar:: prometheus_server__apt_preferences__dependent_list [[[
+#
+# List of apt_preference settings to use backports on stretch
+prometheus_server__apt_preferences__dependent_list:
+  - packages:
+      - prometheus
+    backports: [ 'stretch' ]
+    reason: 'Stable version has some ram leaking problems'
+    by_role: 'debops.prometheus_server'
+                                                                   # ]]]
+                                                                   # ]]]
+# Prometheus Server Configuration [[[
+# -------------------------------
+
+# .. envvar:: prometheus_server__deploy_state [[[
+#
+# Set to `absent` to disable and uninstall this role
+prometheus_server__deploy_state: "present"
+                                                                   # ]]]
+# .. envvar:: prometheus_server__default_jobs [[[
+#
+# Default prometheus config
+# :ref:`prometheus_server__ref_default_variable_details`
+prometheus_server__default_jobs:
+  - name: 'prometheus'
+    state: 'present'
+    content:
+      job_name: 'prometheus'
+      static_configs:
+        - targets: ['localhost:9090']
+          labels:
+            env: 'prod'
+                                                                   # ]]]
+# .. envvar:: prometheus_server__jobs [[[
+#
+# Config which will be managed on all hosts in the Ansible
+# inventory
+prometheus_server__jobs: []
+                                                                   # ]]]
+# .. envvar:: prometheus_server__group_jobs [[[
+#
+# Config which will be managed on specific groups in the Ansible
+# inventory.
+prometheus_server__group_jobs: []
+                                                                   # ]]]
+# .. envvar:: prometheus_server__host_jobs [[[
+#
+# Config which will be managed on specific hosts in the Ansible
+# inventory.
+prometheus_server__host_jobs: []
+                                                                   # ]]]
+# .. envvar:: prometheus_server__combined_jobs [[[
+#
+# List which combines all of the config variables and is used
+# in the configuration template.
+prometheus_server__combined_jobs: '{{ prometheus_server__default_jobs
+                                       + prometheus_server__jobs
+                                       + prometheus_server__group_jobs
+                                       + prometheus_server__host_jobs
+                                       + (prometheus_server__dependent_jobs | d([]) ) }}'
+                                                                   # ]]]
+# .. envvar:: prometheus_server__default_rules [[[
+#
+# Default prometheus rules
+# :ref:`prometheus_server__ref_default_variable_details`
+prometheus_server__default_rules:
+  - name: 'default'
+    state: 'present'
+    content:
+      groups:
+        - name: 'default.rules'
+          rules:
+            - alert: InstanceDown
+              expr: up == 0
+              for: 5m
+              labels:
+                severity: error
+              annotations:
+                summary: !unsafe 'Instance {{ $labels.instance }} down'
+                description: !unsafe "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 5 minutes."
+                                                                   # ]]]
+# .. envvar:: prometheus_server__rules [[[
+#
+# Config which will be managed on all hosts in the Ansible
+# inventory
+prometheus_server__rules: []
+                                                                   # ]]]
+# .. envvar:: prometheus_server__group_rules [[[
+#
+# Config which will be managed on specific groups in the Ansible
+# inventory.
+prometheus_server__group_rules: []
+                                                                   # ]]]
+# .. envvar:: prometheus_server__host_rules [[[
+#
+# Config which will be managed on specific hosts in the Ansible
+# inventory.
+prometheus_server__host_rules: []
+                                                                   # ]]]
+# .. envvar:: prometheus_server__combined_rules [[[
+#
+# List which combines all of the config variables and is used
+# in the configuration template.
+prometheus_server__combined_rules: '{{ prometheus_server__default_rules
+                                       + prometheus_server__rules
+                                       + prometheus_server__group_rules
+                                       + prometheus_server__host_rules
+                                       + (prometheus_server__dependent_rules | d([]) ) }}'
+                                                                   # ]]]
+# .. envvar:: prometheus_server__config [[[
+#
+# List of default config variables
+prometheus_server__default_config:
+  global:
+    scrape_interval:     15s  # By default, scrape targets every 15 seconds.
+    evaluation_interval: 15s  # By default, scrape targets every 15 seconds.
+    # scrape_timeout is set to the global default (10s).
+
+    # Attach these labels to any time series or alerts when communicating with
+    # external systems (federation, remote storage, Alertmanager).
+    external_labels:
+      monitor: 'example'
+  rule_files: []  # field automaticly from `/etc/prometheus/rules.d/`
+  alerting:
+    alertmanagers:
+      - static_configs:
+          - targets:
+              - 'localhost:9093'
+                                                                   # ]]]
+# .. envvar:: prometheus_server__combined_config [[[
+#
+# List which combines all of the config variables and is used
+# in the configuration template.
+prometheus_server__combined_config: '{{ prometheus_server__default_config }}'
+                                                                   # ]]]
+                                                                   # ]]]
+# Ngninx Proxy [[[
+# ------------
+#
+# This is soposed to secure the access to the prometheus server
+
+# .. envvar:: prometheus_server__nginx [[[
+#
+# Enables an nginx proxy for the prometheus server
+prometheus_server__nginx: False
+                                                                   # ]]]
+# .. envvar:: prometheus_server__domain [[[
+#
+# Domain to use for vserver on nginx proxy
+prometheus_server__domain: 'monitor.{{ ansible_fqdn }}'
+                                                                   # ]]]
+# .. envvar:: prometheus_server__nginx__dependent_servers [[[
+#
+# Domain to use for vserver on nginx proxy
+prometheus_server__nginx__dependent_servers:
+  - enabled: '{{ prometheus_server__nginx }}'
+    name: [ '{{ prometheus_server__domain }}' ]
+    type: 'proxy'
+    proxy_pass: 'http://localhost:9090/'
+    auth_basic: True
+    auth_basic_name: 'prometheus_server'
+                                                                   # ]]]
+# .. envvar:: prometheus_server__nginx__dependent_htpasswd [[[
+#
+# Create base auth for this service
+prometheus_server__nginx__dependent_htpasswd:
+  - name: 'prometheus_server'
+    users:
+      - 'monitor'
+                                                                   # ]]]
+                                                                   # ]]]
+# Role-dependent configuration [[[
+# ----------------------------
+
+# .. envvar:: prometheus_server__accept_any [[[
+#
+# Make the prometheus server aviable under the port 9090
+prometheus_server__accept_any: False
+                                                                   # ]]]
+# .. envvar:: prometheus_server__allow [[[
+#
+# List of IP addresses or CIDR subnets which can access the Prometheus server
+# By default access is from the net is forbidden
+prometheus_server__allow: []
+                                                                   # ]]]
+# .. envvar:: prometheus_server__ferm__dependent_rules [[[
+#
+# Ferm rules
+prometheus_server__ferm__dependent_rules:
+  - name: 'prometheus_server'
+    type: 'accept'
+    dport: '9090'
+    saddr: '{{ prometheus_server__allow }}'
+    accept_any: '{{ prometheus_server__accept_any }}'
+    by_role: 'prometheus_server'
+    rule_state: '{{ prometheus_server__deploy_state }}'
+                                                                   # ]]]
+# .. envvar:: prometheus_server__tcpwrappers__dependent_allow [[[
+#
+# Configuration for the debops.tcpwrappers Ansible role.
+prometheus_server__tcpwrappers__dependent_allow:
+  - daemon: [ 'prometheus' ]
+    client: '{{ prometheus_server__allow }}'
+    accept_any: '{{ prometheus_server__accept_any }}'
+    filename: 'prometheus-server'
+                                                                   # ]]]
+# .. envvar:: prometheus_server__etc_services__dependent_list [[[
+#
+# Configuration for :ref:`debops.etc_services` role. It will set up
+# a entry in :file:`/etc/services`.
+prometheus_server__etc_services__dependent_list:
+  - name: 'prom-server'
+    port: 9090
+    comment: 'Prometheus server for monitor metric providing'
+  - name: 'prom-https-server'
+    port: 19090
+    comment: 'Prometheus server for monitor metric providing over https'
+                                                                   # ]]]
+                                                                   # ]]]
+                                                                   # ]]]

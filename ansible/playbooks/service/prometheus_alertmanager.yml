@@ -1,0 +1,34 @@
+---
+
+- name: 'Manage Prometheus alertmanager'
+  hosts: [ 'debops_service_prometheus_alertmanager' ]
+  become: True
+
+  environment: '{{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}'
+  roles:
+    - role: debops.etc_services
+      tags: [ 'role::etc_services' ]
+      etc_services__dependent_list: '{{ prometheus_alertmanager__etc_services__dependent_list }}'
+
+    - role: debops.apt_preferences
+      tags: [ 'role::apt_preferences' ]
+      apt_preferences__dependent_list:
+        - '{{ nginx__apt_preferences__dependent_list }}'
+      when: prometheus_alertmanager__nginx
+
+    - role: debops.ferm
+      tags: [ 'role::ferm', 'role::prometheus' ]
+      ferm__dependent_rules:
+        - '{{ prometheus_alertmanager__ferm__dependent_rules }}'
+        - '{{ nginx__ferm__dependent_rules if prometheus_alertmanager__nginx else [] }}'
+
+    - role: debops.nginx
+      tags: [ 'role::nginx' ]
+      nginx__dependent_servers: '{{ prometheus_alertmanager__nginx__dependent_servers }}'
+      nginx__dependent_htpasswd: '{{ prometheus_alertmanager__nginx__dependent_htpasswd }}'
+      when: prometheus_alertmanager__nginx
+
+    - role: debops.prometheus_alertmanager
+      tags: [ 'role::prometheus_alertmanager' ]

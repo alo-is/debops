@@ -1,0 +1,32 @@
+---
+
+
+- name: Install required packages
+  package:
+    name: '{{ item }}'
+    state: 'present'
+  with_flattened:
+    - '{{ prometheus_alertmanager__base_packages }}'
+    - '{{ prometheus_alertmanager__packages }}'
+
+- name: Copy Configuration
+  template:
+    dest: "/etc/prometheus/alertmanager.yml"
+    src: "etc/prometheus/alertmanager.yml.j2"
+  notify:
+    - 'restart prometheus-alertmanager'
+
+- name: 'Set right permissons workaround for debian bug #891202'
+  file:
+    path: '/var/lib/prometheus'
+    owner: 'prometheus'
+    group: 'prometheus'
+    state: 'directory'
+
+- name: Enable Services
+  service:
+    name: '{{ item }}'
+    enabled: 'yes'
+    state: 'started'
+  with_items:
+    - prometheus-alertmanager

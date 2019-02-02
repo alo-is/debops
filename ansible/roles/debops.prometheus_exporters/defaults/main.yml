@@ -1,0 +1,206 @@
+---
+# .. vim: foldmarker=[[[,]]]:foldmethod=marker
+
+# debops.prometheus_exporters default variables [[[
+# =============================================
+
+# .. contents:: Sections
+#    :local:
+
+# Packages and installation [[[
+# -------------------------
+
+# .. envvar:: prometheus_exporters__base_packages [[[
+#
+# List of base packages to install.
+prometheus_exporters__base_packages:
+  "{{ ([ 'prometheus-node-exporter'   ] if 'node' in prometheus_exporters__exporters else [])
+    + ([ 'prometheus-mysqld-exporter' ] if 'mysqld' in prometheus_exporters__exporters else [])
+    + ([ 'libsystemd-dev', 'build-essential' ] if 'postfix' in prometheus_exporters__exporters else []) }}"
+                                                                   # ]]]
+# .. envvar:: prometheus_exporters__packages [[[
+#
+# List of additional APT packages to install with prometheus.
+prometheus_exporters__packages: []
+                                                                   # ]]]
+                                                                   # ]]]
+# prometheus exporter Configuration [[[
+# ---------------------------------
+
+# .. envvar:: prometheus_exporters__deploy_state [[[
+#
+# Set to `absent` to disable and uninstall this role
+prometheus_exporters__deploy_state: "present"
+                                                                   # ]]]
+# .. envvar:: prometheus_exporters__exporters [[[
+#
+# list of enabled exporters
+# currently available are `node`, `mysqld`, `postfix`
+prometheus_exporters__exporters:
+  - 'node'
+#  - 'mysqld'
+#  - 'postfix'
+                                                                   # ]]]
+# .. envvar:: prometheus_exporter__mysql__dependencies [[[
+#
+# mysql connection for monitoring
+prometheus_exporter__mysql__dependencies:
+  - user: 'prometheus'
+    owner: 'prometheus'
+    group: 'prometheus'
+    home: '/var/lib/prometheus'
+    system: True
+    priv_aux: False
+    priv_default: False
+    priv: '*.*:PROCESS,REPLICATION CLIENT,SELECT'
+                                                                   # ]]]
+                                                                   # ]]]
+# Ngninx Proxy [[[
+# ------------
+#
+# This is soposed to secure the access to the prometheus exporter
+# More details at :ref:`nginx__ref_default_variable_details`
+
+# .. envvar:: prometheus_exporters__nginx [[[
+#
+# Enables an nginx proxy for the prometheus exporter
+prometheus_exporters__nginx: True
+                                                                   # ]]]
+# .. envvar:: prometheus_exporters__domain [[[
+#
+# Domain to use for vserver on nginx proxy
+prometheus_exporters__domain: '{{ ansible_fqdn }}'
+                                                                   # ]]]
+# .. envvar:: prometheus_exporters__nginx__dependent_servers [[[
+#
+# Domain to use for vserver on nginx proxy
+prometheus_exporters__nginx__dependent_servers:
+  - enabled: '{{ prometheus_exporters__nginx and "node" in prometheus_exporters__exporters }}'
+    name: [ '{{ prometheus_exporters__domain }}' ]
+    filename: 'prometheus_exporter_node'
+    type: 'proxy'
+    listen: False
+    listen_ssl: [ '[::]:19100' ]
+    proxy_pass: 'http://localhost:9100'
+    auth_basic: True
+    auth_basic_name: 'prometheus_exporters'
+  - enabled: '{{ prometheus_exporters__nginx and "mysqld" in prometheus_exporters__exporters }}'
+    name: [ '{{ prometheus_exporters__domain }}' ]
+    filename: 'prometheus_exporter_mysqld'
+    type: 'proxy'
+    listen: False
+    listen_ssl: [ '[::]:19104' ]
+    proxy_pass: 'http://localhost:9104'
+    auth_basic: True
+    auth_basic_name: 'prometheus_exporters'
+  - enabled: '{{ prometheus_exporters__nginx and "postfix" in prometheus_exporters__exporters }}'
+    name: [ '{{ prometheus_exporters__domain }}' ]
+    filename: 'prometheus_exporter_postfix'
+    type: 'proxy'
+    listen: False
+    listen_ssl: [ '[::]:19154' ]
+    proxy_pass: 'http://localhost:9154'
+    auth_basic: True
+    auth_basic_name: 'prometheus_exporters'
+                                                                   # ]]]
+# .. envvar:: prometheus_exporters__nginx__dependent_htpasswd [[[
+#
+# Create base auth for this service
+prometheus_exporters__nginx__dependent_htpasswd:
+  - name: 'prometheus_exporters'
+    users:
+      - 'monitor'
+                                                                   # ]]]
+                                                                   # ]]]
+# Role-dependent configuration [[[
+# ----------------------------
+
+# .. envvar:: prometheus_exporters__accept_any [[[
+#
+# Make the prometheus exporter public aviable
+# More infos :ref:`ferm__ref_type_accept`
+prometheus_exporters__accept_any: False
+                                                                   # ]]]
+# .. envvar:: prometheus_exporters__allow [[[
+#
+# List of IP addresses or CIDR subnets which can access the prometheus exporter
+# By default access from the net is forbidden by :envvar:`prometheus_exporters__accept_any`
+prometheus_exporters__allow: []
+                                                                   # ]]]
+# .. envvar:: prometheus_exporters__ferm__dependent_rules [[[
+#
+# Ferm rules
+# More details :ref:`ferm__ref_firewall_rules`
+prometheus_exporters__ferm__dependent_rules:
+  - name: 'prometheus_exporter_node'
+    type: 'accept'
+    dport: '{{ 19100 if prometheus_exporters__nginx else 9100 }}'
+    saddr: '{{ prometheus_exporters__allow }}'
+    accept_any: '{{ prometheus_exporters__accept_any }}'
+    by_role: 'prometheus_exporters'
+    rule_state: '{{ prometheus_exporters__deploy_state if "node" in prometheus_exporters__exporters else "absent" }}'
+  - name: 'prometheus_exporter_mysqld'
+    type: 'accept'
+    dport: '{{ 19104 if prometheus_exporters__nginx else 9104 }}'
+    saddr: '{{ prometheus_exporters__allow }}'
+    accept_any: '{{ prometheus_exporters__accept_any }}'
+    by_role: 'prometheus_exporters'
+    rule_state: '{{ prometheus_exporters__deploy_state if "mysqld" in prometheus_exporters__exporters else "absent" }}'
+  - name: 'prometheus_exporter_postfix'
+    type: 'accept'
+    dport: '{{ 19154 if prometheus_exporters__nginx else 9154 }}'
+    saddr: '{{ prometheus_exporters__allow }}'
+    accept_any: '{{ prometheus_exporters__accept_any }}'
+    by_role: 'prometheus_exporters'
+    rule_state: '{{ prometheus_exporters__deploy_state if "postfix" in prometheus_exporters__exporters else "absent" }}'
+                                                                   # ]]]
+# .. envvar:: prometheus_exporters__tcpwrappers__dependent_allow [[[
+#
+# Configuration for the debops.tcpwrappers Ansible role.
+# More details at :ref:`tcpwrappers__allow`
+prometheus_exporters__tcpwrappers__dependent_allow:
+  - daemon: '{{ [ "prometheus-node-exporter" ] if "node" in prometheus_exporters__exporters else []
+          + [ "prometheus-mysqld-exporter" ] if "mysqld" in prometheus_exporters__exporters else []
+          + [ "prometheus-postfix-exporter" ] if "postfix" in prometheus_exporters__exporters else [] }}'
+    client: '{{ prometheus_exporters__allow }}'
+    accept_any: '{{ prometheus_exporters__accept_any }}'
+    filename: 'prometheus-exporters'
+                                                                   # ]]]
+# .. envvar:: prometheus_exporters__etc_services__dependent_list [[[
+#
+# Configuration for :ref:`debops.etc_services` role. It will set up
+# a entry in :file:`/etc/services`.
+prometheus_exporters__etc_services__dependent_list:
+  - name: 'prom-node'
+    port: 9100
+    accept_any: '{{ prometheus_exporters__accept_any }}'
+    comment: 'Prometheus node exporter for metric providing'
+    state: '{{ prometheus_exporters__deploy_state if "node" in prometheus_exporters__exporters else "absent" }}'
+  - name: 'prom-mysqld'
+    port: 9104
+    accept_any: '{{ prometheus_exporters__accept_any }}'
+    comment: 'Prometheus mysql exporter for metric providing'
+    state: '{{ prometheus_exporters__deploy_state if "mysqld" in prometheus_exporters__exporters else "absent" }}'
+  - name: 'prom-postfix'
+    port: 9154
+    accept_any: '{{ prometheus_exporters__accept_any }}'
+    comment: 'Prometheus postfix exporter for metric providing'
+    state: '{{ prometheus_exporters__deploy_state if "postfix" in prometheus_exporters__exporters else "absent" }}'
+  - name: 'prom-https-node'
+    port: 19100
+    accept_any: '{{ prometheus_exporters__accept_any }}'
+    comment: 'Prometheus node exporter for metric providing over https'
+    state: '{{ prometheus_exporters__deploy_state if "node" in prometheus_exporters__exporters else "absent" }}'
+  - name: 'prom-https-mysqld'
+    port: 19104
+    accept_any: '{{ prometheus_exporters__accept_any }}'
+    comment: 'Prometheus mysql exporter for metric providing over https'
+    state: '{{ prometheus_exporters__deploy_state if "mysqld" in prometheus_exporters__exporters else "absent" }}'
+  - name: 'prom-https-postfix'
+    port: 19154
+    accept_any: '{{ prometheus_exporters__accept_any }}'
+    comment: 'Prometheus postfix exporter for metric providing over https'
+    state: '{{ prometheus_exporters__deploy_state if "postfix" in prometheus_exporters__exporters else "absent" }}'
+                                                                   # ]]]
+                                                                   # ]]]
+                                                                   # ]]]
