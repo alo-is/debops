@@ -368,6 +368,14 @@ stages:
     JANE_DIFF_PATTERN: '.*/debops.docker_gen/.*'
     JANE_LOG_PATTERN: '\[debops\.docker_gen\]'
 
+'docker_registry role':
+  <<: *test_role_3rd_deps
+  variables:
+    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/docker_registry.yml'
+    JANE_INVENTORY_GROUPS: 'debops_service_docker_registry'
+    JANE_DIFF_PATTERN: '.*/debops.docker_registry/.*'
+    JANE_LOG_PATTERN: '\[debops\.docker_registry\]'
+
 'dokuwiki role':
   <<: *test_role_2nd_deps
   variables:
@@ -693,6 +701,15 @@ stages:
 
 # --- l --- [[[2
 
+'ldap role':
+  <<: *test_role_1st_deps
+  variables:
+    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/ldap.yml'
+    JANE_INVENTORY_GROUPS: 'debops_service_ldap'
+    JANE_INVENTORY_HOSTVARS: 'ldap__enabled=true'
+    JANE_DIFF_PATTERN: '.*/debops.ldap/.*'
+    JANE_LOG_PATTERN: '\[debops\.ldap\]'
+
 'librenms role':
   <<: *test_role_3rd_deps
   variables:
@@ -906,6 +923,15 @@ stages:
     JANE_DIFF_PATTERN: '.*/debops.nodejs/.*'
     JANE_LOG_PATTERN: '\[debops\.nodejs\]'
 
+'nslcd role':
+  <<: *test_role_2nd_deps
+  variables:
+    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/nslcd.yml'
+    JANE_INVENTORY_GROUPS: 'debops_service_nslcd'
+    JANE_INVENTORY_HOSTVARS: 'ldap__enabled=true'
+    JANE_DIFF_PATTERN: '.*/debops.nslcd/.*'
+    JANE_LOG_PATTERN: '\[debops\.nslcd\]'
+
 'nsswitch role':
   <<: *test_role_no_deps
   variables:
@@ -959,6 +985,14 @@ stages:
 
 
 # --- p --- [[[2
+
+'pam_access role':
+  <<: *test_role_no_deps
+  variables:
+    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/pam_access.yml'
+    JANE_INVENTORY_GROUPS: 'debops_service_pam_access'
+    JANE_DIFF_PATTERN: '.*/debops.pam_access/.*'
+    JANE_LOG_PATTERN: '\[debops\.pam_access\]'
 
 'persistent_paths role':
   <<: *test_role_no_deps
@@ -1309,6 +1343,14 @@ stages:
     JANE_DIFF_PATTERN: '.*/debops.slapd/.*'
     JANE_LOG_PATTERN: '\[debops\.slapd\]'
 
+'slapd/pki role':
+  <<: *test_role_2nd_deps
+  variables:
+    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/pki.yml ${DEBOPS_PLAYBOOKS}/service/slapd.yml'
+    JANE_INVENTORY_GROUPS: 'debops_service_pki,debops_service_slapd'
+    JANE_DIFF_PATTERN: '.*/debops.slapd/.*'
+    JANE_LOG_PATTERN: '\[debops\.slapd\]'
+
 'smstools role':
   <<: *test_role_3rd_deps
   variables:
@@ -1342,7 +1384,7 @@ stages:
     JANE_LOG_PATTERN: '\[debops\.stunnel\]'
 
 'sudo role':
-  <<: *test_role_no_deps
+  <<: *test_role_2nd_deps
   variables:
     JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/sudo.yml'
     JANE_INVENTORY_GROUPS: 'debops_service_sudo'
@@ -1350,7 +1392,7 @@ stages:
     JANE_LOG_PATTERN: '\[debops\.sudo\]'
 
 'system_groups role':
-  <<: *test_role_1st_deps
+  <<: *test_role_3rd_deps
   variables:
     JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/system_groups.yml'
     JANE_INVENTORY_GROUPS: 'debops_service_system_groups'
@@ -1452,3 +1494,15 @@ stages:
     JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/users.yml'
     JANE_DIFF_PATTERN: '.*/debops.users/.*'
     JANE_LOG_PATTERN: '\[debops\.users\]'
+
+
+# --- y --- [[[2
+
+'yadm role':
+  <<: *test_role_1st_deps
+  variables:
+    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/yadm.yml'
+    JANE_INVENTORY_GROUPS: 'debops_service_yadm'
+    JANE_INVENTORY_HOSTVARS: 'yadm__dotfiles_enabled=true'
+    JANE_DIFF_PATTERN: '.*/debops.yadm/.*'
+    JANE_LOG_PATTERN: '\[debops\.yadm\]'

@@ -62,17 +62,25 @@
     group: '{{ librenms__webserver_user }}'
     mode: '0750'
 
-- name: Make sure required directories exist
+- name: Make sure log directory exists
+  file:
+    dest: '{{ librenms__log_dir }}'
+    state: 'directory'
+    owner: '{{ librenms__user }}'
+    group: '{{ librenms__group }}'
+    mode: '0750'
+  tags: [ 'role::librenms:config' ]
+
+- name: Make sure data directories exist
   file:
     dest: '{{ item }}'
     state: 'directory'
     owner: '{{ librenms__user }}'
     group: '{{ librenms__group }}'
-    mode: '0750'
+    mode: '0775'
   with_items:
     - '{{ librenms__data_path }}'
     - '{{ librenms__rrd_dir }}'
-    - '{{ librenms__log_dir }}'
   tags: [ 'role::librenms:config' ]
 
 
@@ -109,34 +117,14 @@
     mode: '{{ librenms__config_mode }}'
   tags: [ 'role::librenms:config', 'role::librenms:database' ]
 
-- name: Download composer.phar if requested
-  get_url:
-    url: '{{ librenms__composer_phar_url }}'
-    dest: '{{ librenms__install_path }}'
-    mode: '0640'
-  become: True
-  become_user: '{{ librenms__user }}'
-  when: librenms__composer_phar|bool
-
-- name: Install missing PHP packages via composer.phar
-  command: php composer.phar install
-  args:
-    chdir: '{{ librenms__install_path }}'
-  become: True
-  become_user: '{{ librenms__user }}'
-  when: librenms__composer_phar|bool
-  register: librenms__register_composer_phar
-  changed_when: not "Nothing to install or update" in librenms__register_composer_phar.stderr|d('')
-
-- name: Install missing PHP packages via system-wide composer
+- name: Install missing PHP packages via Composer
   composer:
-    command: install
+    command: 'install'
     working_dir: '{{ librenms__install_path }}'
   register: librenms__register_composer
   until: librenms__register_composer is succeeded
   become: True
   become_user: '{{ librenms__user }}'
-  when: not librenms__composer_phar|bool
 
 - name: Initialize database
   command: php build-base.php
@@ -153,6 +141,7 @@
   become_user: '{{ librenms__user }}'
   register: librenms__register_users
   changed_when: False
+  check_mode: False
   tags: [ 'role::librenms:config', 'role::librenms:admins' ]
 
 - name: Create admin accounts
@@ -160,6 +149,7 @@
                                                              + "/librenms/admin/" + item + "/password") }} 10'
   args:
     chdir: '{{ librenms__install_path }}'
+  check_mode: False
   become: True
   become_user: '{{ librenms__user }}'
   with_items: '{{ librenms__admin_accounts }}'
@@ -177,9 +167,13 @@
   tags: [ 'role::librenms:config' ]
 
 - name: Check list of current user accounts
-  shell: 'getent passwd | cut -d: -f1'
+  shell: 'set -o nounset -o pipefail -o errexit &&
+          getent passwd | cut -d: -f1'
+  args:
+    executable: '/bin/bash'
   register: librenms__register_passwd
   changed_when: False
+  check_mode: False
   when: librenms__home_snmp_conf|d() and librenms__home_snmp_conf
   tags: [ 'role::librenms:config', 'role::librenms:snmp_conf' ]
 
@@ -191,6 +185,7 @@
     group: '{{ item }}'
     mode: '0700'
   with_items: '{{ librenms__home_snmp_conf }}'
+  check_mode: False
   when: ((librenms__home_snmp_conf|d() and librenms__home_snmp_conf) and
          (librenms__register_passwd|d() and item in librenms__register_passwd.stdout_lines))
   tags: [ 'role::librenms:config', 'role::librenms:snmp_conf' ]

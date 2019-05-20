@@ -54,6 +54,9 @@
     - role: debops.pki/env
       tags: [ 'role::pki', 'role::pki:secret', 'role::secret' ]
 
+    - role: debops.sshd/env
+      tags: [ 'role::sshd', 'role::ldap' ]
+
     - role: debops.secret
       tags: [ 'role::secret', 'role::pki', 'role::pki:secret' ]
       secret_directories:
@@ -67,10 +70,14 @@
       apt_preferences__dependent_list:
         - '{{ sshd__apt_preferences__dependent_list }}'
         - '{{ apt_install__apt_preferences__dependent_list }}'
+        - '{{ yadm__apt_preferences__dependent_list }}'
         - '{{ rsyslog__apt_preferences__dependent_list }}'
 
     - role: debops.apt_proxy
       tags: [ 'role::apt_proxy', 'skip::apt_proxy' ]
+
+    - role: debops.cron
+      tags: [ 'role::cron', 'skip::cron' ]
 
     - role: debops.atd
       tags: [ 'role::atd', 'skip::atd' ]
@@ -86,6 +93,21 @@
 
     - role: debops.python
       tags: [ 'role::python', 'skip::python' ]
+      python__dependent_packages3:
+        - '{{ ldap__python__dependent_packages3 }}'
+      python__dependent_packages2:
+        - '{{ ldap__python__dependent_packages2 }}'
+
+    # LDAP client initialization should be done separately to prepare local
+    # facts for other roles to use in configuration.
+    - role: debops.ldap
+      tags: [ 'role::ldap', 'skip::ldap' ]
+
+    - role: debops.ldap
+      tags: [ 'role::ldap', 'skip::ldap' ]
+      ldap__dependent_tasks:
+        - '{{ sudo__ldap__dependent_tasks }}'
+        - '{{ sshd__ldap__dependent_tasks }}'
 
     - role: debops.apt_listchanges
       tags: [ 'role::apt_listchanges', 'skip::apt_listchanges' ]
@@ -93,11 +115,19 @@
     - role: debops.apt_install
       tags: [ 'role::apt_install', 'skip::apt_install' ]
 
+    - role: debops.yadm
+      tags: [ 'role::yadm', 'skip::yadm' ]
+
     - role: debops.sudo
       tags: [ 'role::sudo', 'skip::sudo' ]
 
     - role: debops.system_groups
       tags: [ 'role::system_groups', 'skip::system_groups' ]
+
+    - role: debops.pam_access
+      tags: [ 'role::pam_access', 'skip::pam_access' ]
+      pam_access__dependent_rules:
+        - '{{ sshd__pam_access__dependent_rules }}'
 
     - role: debops.etc_services
       tags: [ 'role::etc_services', 'skip::etc_services' ]
@@ -170,9 +200,6 @@
 
     - role: debops.sshd
       tags: [ 'role::sshd', 'skip::sshd' ]
-
-    - role: debops.cron
-      tags: [ 'role::cron', 'skip::cron' ]
 
     - role: debops.apt_mark
       tags: [ 'role::apt_mark', 'skip::apt_mark' ]

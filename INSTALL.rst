@@ -79,8 +79,8 @@ Ansible:
   via PyPI.
 
 .. __: https://www.python-ldap.org/en/latest/
-.. __: https://docs.ansible.com/ansible/latest/ldap_attr_module.html
-.. __: https://docs.ansible.com/ansible/latest/ldap_entry_module.html
+.. __: https://docs.ansible.com/ansible/latest/modules/ldap_attr_module.html
+.. __: https://docs.ansible.com/ansible/latest/modules/ldap_entry_module.html
 
 `future`__
   This module provides a compatibility layer between Python 2.7 and Python 3.x
@@ -124,7 +124,7 @@ packages by running the command:
 .. code-block:: console
 
    sudo apt install build-essential python-dev libffi-dev libssl-dev \
-                    libsasl2-dev libldap2-dev
+                    libsasl2-dev libldap2-dev python-pip
 
 Installation of DebOps with Ansible included
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -169,7 +169,7 @@ Ansible can be `installed in a variety of methods`__, you can choose your
 preferred one depending on the platform you use for the Ansible Controller.
 There are some caveats on specific platforms, described below.
 
-.. __: https://docs.ansible.com/ansible/latest/intro_installation.html
+.. __: https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html
 
 Debian
   On the current Debian Stable release, you might need to install the
@@ -242,7 +242,7 @@ development packages:
 .. code-block:: console
 
    sudo apt install build-essential python-virtualenv virtualenv python-dev \
-                    libffi-dev libssl-dev libsasl2-dev libldap2-dev
+                    libffi-dev libssl-dev libsasl2-dev libldap2-dev python-pip
 
 After that, you can create a new Python :command:`virtualenv` environment in
 a selected directory and "enter" it by executing the commands:

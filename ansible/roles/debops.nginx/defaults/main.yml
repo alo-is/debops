@@ -50,7 +50,7 @@ nginx__deploy_state: 'present'
 # .. envvar:: nginx_base_packages [[[
 #
 # List of Debian packages installed by this role
-nginx_base_packages: [ 'python-passlib' ]
+nginx_base_packages: []
 
                                                                    # ]]]
 # .. envvar:: nginx_flavor [[[
@@ -392,6 +392,15 @@ nginx_real_ip_recursive: False
 nginx_default_keepalive_timeout: 60
 
                                                                    # ]]]
+
+# .. envvar:: nginx_multi_accept [[[
+#
+# If enabled a worker proccess will accept all new connections at a time,
+# instead of a new connection at a time.
+nginx_multi_accept: 'off'
+
+                                                                   # ]]]
+
 # .. envvar:: nginx_pki [[[
 #
 # Enable or disable support for PKI/SSL/TLS in nginx.
@@ -690,6 +699,17 @@ nginx_acme_server: False
 nginx_acme_domain: 'acme.{{ ansible_domain }}'
 
                                                                    # ]]]
+# .. envvar:: nginx__hostname_domains [[[
+#
+# Specify the domains which will be used as a base domains for automatic short
+# name generation. It will not be used if it's defined on the server level.
+# First domain from the list that matches, wins.
+nginx__hostname_domains: [ '{{ ansible_local.core.domain
+                               if (ansible_local|d() and ansible_local.core|d() and
+                                   ansible_local.core.domain|d())
+                               else (ansible_domain if ansible_domain else ansible_hostname) }}' ]
+
+                                                                   # ]]]
 # .. envvar:: nginx_status [[[
 #
 # List of IP addresses or CIDR ranges to allow access to the status page
@@ -831,6 +851,12 @@ nginx__maps: []
 #
 # List of default nginx map definitions
 nginx__default_maps:
+
+  # Extract the subdomain from the '*.local' domain managed by Avahi and expose
+  # it as a variable which can be used to redirect the HTTP clients to websites
+  - name: 'host_without_local'
+    map: '$host $host_without_local'
+    mapping: '~*^(?<subdomain>[a-zA-Z0-9\-\_\.]+)\.local$ $subdomain;'
 
   # Support WebSocket connection upgrade as a proxy
   # Documentation: https://nginx.org/en/docs/http/websocket.html
@@ -1130,5 +1156,25 @@ nginx_ssl_ciphers:
   # This cipher set disables the 'ssl_ciphers' option in 'nginx' and the
   # default set of SSL ciphers for a given platform will be used.
   default: ''
+                                                                   # ]]]
+                                                                   # ]]]
+# Configuration for other Ansible roles [[[
+# ----------------------------------------
+
+# .. envvar:: nginx__python__dependent_packages3 [[[
+#
+# Configuration for the :ref:`debops.python` Ansible role.
+nginx__python__dependent_packages3:
+
+  - 'python3-passlib'
+
+                                                                   # ]]]
+# .. envvar:: nginx__python__dependent_packages2 [[[
+#
+# Configuration for the :ref:`debops.python` Ansible role.
+nginx__python__dependent_packages2:
+
+  - 'python-passlib'
+
                                                                    # ]]]
                                                                    # ]]]

@@ -76,7 +76,10 @@
 - name: Check OpenSSH server version
   environment:
     LC_MESSAGES: 'C'
-  shell: 'dpkg-query -W -f="\${Version}\n" "openssh-server" | sed -re "s/^.*:([0-9]+\.[0-9]+).*/\1/"'
+  shell: 'set -o nounset -o pipefail -o errexit &&
+          dpkg-query -W -f="\${Version}\n" "openssh-server" | sed -re "s/^.*:([0-9]+\.[0-9]+).*/\1/"'
+  args:
+    executable: '/bin/bash'
   register: sshd__register_version
   changed_when: False
   check_mode: False
@@ -142,7 +145,10 @@
   tags: [ 'role::sshd:known_hosts' ]
 
 - name: Get list of already scanned host fingerprints
-  shell: ssh-keygen -f {{ sshd__known_hosts_file }} -F {{ item }} | grep -q '^# Host {{ item }} found'
+  shell: set -o nounset -o pipefail -o errexit &&
+         ssh-keygen -f {{ sshd__known_hosts_file }} -F {{ item }} | grep -q '^# Host {{ item }} found'
+  args:
+    executable: '/bin/bash'
   with_flattened:
     - '{{ sshd__known_hosts }}'
     - '{{ sshd__group_known_hosts }}'
@@ -177,6 +183,30 @@
     name: '/etc/ssh/sshd_not_to_be_run'
     state: 'absent'
   notify: [ 'Test sshd configuration and restart' ]
+
+- name: Divert PAM configuration for sshd
+  command: dpkg-divert --quiet --local
+           --divert "/etc/pam.d/sshd.dpkg-divert"
+           --rename "/etc/pam.d/sshd"
+  args:
+    creates: '/etc/pam.d/sshd.dpkg-divert'
+  when: sshd__pam_deploy_state == 'present'
+
+- name: Generate PAM configuration for sshd
+  template:
+    src: 'etc/pam.d/sshd.j2'
+    dest: '/etc/pam.d/sshd'
+    mode: '0644'
+  when: sshd__pam_deploy_state == 'present'
+
+- name: Revert default sshd PAM configuration if requested
+  shell: set -o nounset -o pipefail -o errexit &&
+         rm -f /etc/pam.d/sshd &&
+         dpkg-divert --quiet --local --rename --remove /etc/pam.d/sshd
+  args:
+    executable: '/bin/bash'
+    removes: '/etc/pam.d/sshd.dpkg-divert'
+  when: sshd__pam_deploy_state != 'present'
 
 - name: Make sure that Ansible local fact directory exists
   file:

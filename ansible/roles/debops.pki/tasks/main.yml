@@ -49,11 +49,14 @@
 
 - name: Check Ansible Controller crypto library version
   shell: |
+    set -o nounset -o pipefail -o errexit &&
     {% if pki_ca_library == 'gnutls' %}
     certtool --version | head -n 1 | awk '{print $NF}'
     {% elif pki_ca_library == 'openssl' %}
     openssl version | awk '{print $2}'
     {% endif %}
+  args:
+    executable: '/bin/bash'
   changed_when: False
   register: pki__register_crypto_library_version
   delegate_to: 'localhost'
@@ -348,6 +351,7 @@
            --crl "{{ item.crl | d(True) }}"
            --ocsp "{{ item.ocsp | d(True) }}"
            --name-constraints "{{ item.name_constraints | d(pki_ca_name_constraints) }}"
+           --name-constraints-critical "{{ item.name_constraints_critical | d(pki_ca_name_constraints_critical) }}"
   args:
     chdir: '{{ secret + "/pki" }}'
     creates: '{{ secret + "/pki/authorities/" + item.name + "/subject/cert.pem" }}'

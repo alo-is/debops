@@ -16,13 +16,16 @@
 # .. envvar:: netbase__enabled [[[
 #
 # Enable or disable support for local host and network database management.
-netbase__enabled: True
+netbase__enabled: '{{ False
+                      if (ansible_virtualization_type == "docker" and
+                          ansible_virtualization_role == "guest")
+                      else True }}'
 
                                                                    # ]]]
 # .. envvar:: netbase__base_packages [[[
 #
 # List of base APT packages to linstall for netbase support.
-netbase__base_packages: [ 'netbase', 'libcap2-bin' ]
+netbase__base_packages: [ 'netbase', 'libcap2-bin', 'dbus' ]
 
                                                                    # ]]]
 # .. envvar:: netbase__packages [[[

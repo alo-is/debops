@@ -32,7 +32,7 @@ etc.
 - :ref:`debops.owncloud`
 - :ref:`debops.prosody`
 - :ref:`debops.rstudio_server`
-- ``debops.phpipam``
+- :ref:`debops.phpipam`
 - ``debops.phpmyadmin``
 - ``debops-contrib.foodsoft``
 - ``debops-contrib.homeassistant``
@@ -76,6 +76,7 @@ are not accessed directly by end users.
 - :ref:`debops.fcgiwrap`
 - :ref:`debops.freeradius`
 - :ref:`debops.gunicorn`
+- :ref:`debops.ldap`
 - :ref:`debops.memcached`
 - :ref:`debops.mosquitto`
 - :ref:`debops.rabbitmq_management`
@@ -100,6 +101,7 @@ Databases
 ---------
 
 - :ref:`debops.elasticsearch`
+- :ref:`debops.ldap`
 - :ref:`debops.mariadb`
 - :ref:`debops.mariadb_server`
 - :ref:`debops.postgresql`
@@ -108,6 +110,15 @@ Databases
 - :ref:`debops.redis_sentinel`
 - :ref:`debops.slapd`
 - ``debops.phpmyadmin``
+
+
+Directory services
+------------------
+
+- :ref:`debops.ldap`
+- :ref:`debops.nslcd`
+- :ref:`debops.nsswitch`
+- :ref:`debops.slapd`
 
 
 Encryption
@@ -244,6 +255,7 @@ Security
 - :ref:`debops.fail2ban`
 - :ref:`debops.ferm`
 - :ref:`debops.freeradius`
+- :ref:`debops.pam_access`
 - :ref:`debops.proc_hidepid`
 - :ref:`debops.sshd`
 - :ref:`debops.sudo`
@@ -263,13 +275,16 @@ System configuration
 - :ref:`debops.etc_services`
 - :ref:`debops.etckeeper`
 - :ref:`debops.ferm`
+- :ref:`debops.ldap`
 - :ref:`debops.locales`
 - :ref:`debops.logrotate`
 - :ref:`debops.machine`
 - :ref:`debops.mount`
 - :ref:`debops.netbase`
+- :ref:`debops.nslcd`
 - :ref:`debops.nsswitch`
 - :ref:`debops.ntp`
+- :ref:`debops.pam_access`
 - :ref:`debops.resources`
 - :ref:`debops.root_account`
 - :ref:`debops.swapfile`
@@ -278,6 +293,7 @@ System configuration
 - :ref:`debops.sysnews`
 - :ref:`debops.system_groups`
 - :ref:`debops.users`
+- :ref:`debops.yadm`
 - ``debops.console``
 - ``debops.gitusers``
 - ``debops.sftpusers``
@@ -299,6 +315,7 @@ Virtualization
 
 - :ref:`debops.docker`
 - :ref:`debops.docker_gen`
+- :ref:`debops.docker_registry`
 - :ref:`debops.libvirt`
 - :ref:`debops.libvirtd`
 - :ref:`debops.libvirtd_qemu`

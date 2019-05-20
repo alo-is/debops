@@ -24,7 +24,7 @@ docker__distribution: '{{ ansible_local.core.distribution
                                                                    # ]]]
 # .. envvar:: docker__distribution_release [[[
 #
-# The OS distribution relese which is used to select upstream APT repository.
+# The OS distribution release which is used to select upstream APT repository.
 docker__distribution_release: '{{ ansible_local.core.distribution_release
                                   if (ansible_local|d() and ansible_local.core|d() and
                                       ansible_local.core.distribution_release|d())
@@ -66,7 +66,7 @@ docker__upstream_key: '{{ "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
                                                                    # ]]]
 # .. envvar:: docker__upstream_packagename [[[
 #
-# The full docker packagename to be installed.
+# The full docker package name to be installed if installing from upstream.
 docker__upstream_packagename: '{{ "docker-" + docker__upstream_edition }}'
 
                                                                    # ]]]
@@ -88,6 +88,12 @@ docker__upstream_repository: '{{ "deb [arch="
         + docker__distribution_release + " " + docker__upstream_channel }}'
 
                                                                    # ]]]
+# .. envvar:: docker__packagename [[[
+#
+# The full docker package name to be installed.
+docker__packagename: '{{ docker__upstream_packagename if docker__upstream|d() else "docker.io" }}'
+
+                                                                   # ]]]
 # .. envvar:: docker__mandatory_packages [[[
 #
 # List of mandatory packages to install with Docker.
@@ -104,10 +110,6 @@ docker__mandatory_packages:
 # List of base packages to install with Docker.
 docker__base_packages:
   - "aufs-tools"
-  - "python-pip"
-  - "python-setuptools"
-  - "python-virtualenv"
-  - 'python-dev'
   - '{{ [ "virtualenv" ] if (ansible_distribution_release not in ["trusty", "wheezy"]) else [] }}'
   - "bridge-utils"
   - '{{ [ "cgroup-lite" ] if (ansible_distribution_release in ["trusty"]) else [] }}'
@@ -156,7 +158,7 @@ docker__virtualenv_python_symlink: '/usr/local/bin/docker-python'
                                                                    # ]]]
 # .. envvar:: docker__default_pip_packages [[[
 #
-# List od default Python packages to install in Docker virtualenv. The
+# List of default Python packages to install in Docker virtualenv. The
 # corresponding binaries will be symlinked in the :file:`/usr/local/bin/`
 # directory to allow access from outside of the Python virtualenv.
 # See :ref:`docker__ref_pip_packages` for more details.
@@ -192,8 +194,8 @@ docker__pip_packages: []
 
 # .. envvar:: docker__admins [[[
 #
-# List of UNIX accounts which should be added to :command:`docker` system group which
-# has access to the Docker UNIX socket.
+# List of UNIX accounts which should be added to the ``docker`` system group
+# which giving them access to the Docker UNIX socket.
 docker__admins: '{{ ansible_local.core.admin_users
                     if (ansible_local|d() and ansible_local.core|d() and
                         ansible_local.core.admin_users|d())
@@ -491,6 +493,28 @@ docker__ferment_wrapper: '{{ (ansible_local.root.lib
 # Configuration for other Ansible roles [[[
 # -----------------------------------------
 
+# .. envvar:: docker__python__dependent_packages3 [[[
+#
+# Configuration for the :ref:`debops.python` Ansible role.
+docker__python__dependent_packages3:
+
+  - 'python3-pip'
+  - 'python3-setuptools'
+  - 'python3-virtualenv'
+  - 'python3-dev'
+
+                                                                   # ]]]
+# .. envvar:: docker__python__dependent_packages2 [[[
+#
+# Configuration for the :ref:`debops.python` Ansible role.
+docker__python__dependent_packages2:
+
+  - 'python-pip'
+  - 'python-setuptools'
+  - 'python-virtualenv'
+  - 'python-dev'
+
+                                                                   # ]]]
 # .. envvar:: docker__etc_services__dependent_list [[[
 #
 # Configuration for :ref:`debops.etc_services` role which registers port numbers

@@ -3,14 +3,15 @@
 
 # Ondřej Surý APT repositories [[[
 
-- name: Add Ondrej Sury APT key
+- name: Manage Ondrej Sury APT keys
   apt_key:
-    id: '{{ php__sury_apt_key_id }}'
-    state: 'present'
+    id: '{{ (item.id | d(item)) | replace(" ","") }}'
+    state: '{{ item.state | d("present") }}'
     keyserver: '{{ ansible_local.core.keyserver
                    if (ansible_local|d() and ansible_local.core|d() and
                        ansible_local.core.keyserver)
                    else "hkp://pool.sks-keyservers.net" }}'
+  loop: '{{ php__sury_apt_key_id }}'
   register: php__register_apt_key
   until: php__register_apt_key is succeeded
   when: php__sury|bool
@@ -39,8 +40,14 @@
 - name: Detect PHP version from available packages
   environment:
     LC_ALL: 'C'
-  shell: apt-cache show {{ php__version_preference | join(' ') }}
-         | grep -E '^Package:\s+php[0-9.]+$' | head -n 1 | awk '{print $2}' | sed -e 's/^php//'
+  shell: set -o nounset -o pipefail -o errexit &&
+         apt-cache madison {{ php__version_preference | join(' ') }} \
+           | awk '{print $3}' \
+           | sed -e 's/^.*://' -e 's/\+.*$//' -e 's/\d+\.\d+//' \
+           | awk -F'.' '{print $1"."$2}' \
+           | head -n 1
+  args:
+    executable: '/bin/bash'
   register: php__register_version
   check_mode: False
   changed_when: False
@@ -49,9 +56,12 @@
 - name: Detect PHP long version from available packages
   environment:
     LC_ALL: 'C'
-  shell: apt-cache policy {{ php__version_preference | join(' ') }}
-         | grep -E '^\s+Candidate:\s+' | grep --invert-match 'none' | head -n 1
-         | sed --regexp-extended 's/\s*[[:alnum:]]+:\s* ([^+-]+).*/\1/g;'
+  shell: set -o nounset -o pipefail -o errexit &&
+         apt-cache madison {{ 'php' + php__register_version.stdout }} \
+           | awk '{print $3}' | sed -e 's/^.*://' -e 's/\+.*$//' -e 's/\-.*$//' \
+           | head -n 1
+  args:
+    executable: '/bin/bash'
   register: php__register_long_version
   check_mode: False
   changed_when: False
