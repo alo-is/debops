@@ -16,7 +16,42 @@ You can read information about required changes between releases in the
 `debops master`_ - unreleased
 -----------------------------
 
-.. _debops master: https://github.com/debops/debops/compare/v0.8.1...master
+.. _debops master: https://github.com/debops/debops/compare/v1.0.0...master
+
+Added
+~~~~~
+
+- [debops.slapd] The role can now control on which ports and services OpenLDAP
+  listens for connections. The ``ldaps:///`` service is enabled by default when
+  support for the :ref:`debops.pki` role is enabled on the OpenLDAP host.
+
+- [debops.users] Readd :envvar:`users__default_shell` which was removed in
+  `debops v1.0.0`_.
+
+Changed
+~~~~~~~
+
+- DebOps now uses ``xenial`` as the default OS release used in Travis-CI tests.
+  The ``xenial`` images on Travis use the :command:`shellcheck` v0.6.0 to test
+  shell scripts; if you want to run the :command:`test shell` command locally
+  to check the script syntax, you will need to update your
+  :command:`shellcheck` installation to the v0.6.0 version to match the one on
+  Travis-CI. This version is at present not available in Debian, therefore
+  a custom install will be needed. See the `ShellCheck install instructions`__
+  for your preferred method.
+
+  .. __: https://github.com/koalaman/shellcheck#installing-a-pre-compiled-binary
+
+- The :command:`zsh` shell APT package will be installed only if the :ref:`root
+  account <debops.root_account>`, :ref:`any system users <debops.system_users>`
+  or :ref:`regular users <debops.users>` managed by Ansible are using it as
+  a login shell.
+
+
+`debops v1.0.0`_ - 2019-05-22
+-----------------------------
+
+.. _debops v1.0.0: https://github.com/debops/debops/compare/v0.8.1...v1.0.0
 
 Added
 ~~~~~
@@ -44,6 +79,10 @@ Added
     dotfiles locally. The role is included in the common playbook.
 
     .. __: https://yadm.io/
+
+  - :ref:`debops.system_users` role replaces the ``debops.bootstrap`` role and
+    is used to manage the local system administrator accounts. It is included
+    in the :file:`common.yml` playbook as well as the bootstrap playbooks.
 
 - [debops.nginx] The role will automatically generate configuration which
   redirects short hostnames or subdomains to their FQDN equivalents. This
@@ -107,12 +146,22 @@ Added
   role and can configure the :command:`sudo` service to read ``sudoers``
   configuration from the LDAP directory.
 
+- [debops.users] The role can now configure UNIX accounts with access
+  restricted to SFTP operations (SFTPonly) with the new ``item.chroot``
+  parameter. This is a replacement for the ``debops.sftpusers`` role.
+
+- Support for Ansible Collections managed by the `Mazer`__ Content Manager has
+  been implemented in the repository. Ansible Collections will be usable after
+  June 2019, when support for them is enabled in the Ansible Galaxy service.
+
+  .. __: https://github.com/ansible/mazer
+
 Changed
 ~~~~~~~
 
 - Updates of upstream application versions:
 
-  - [debops.gitlab] The role will install GitLab 11.7 on supported platforms
+  - [debops.gitlab] The role will install GitLab 11.10 on supported platforms
     (Debian Buster, Ubuntu Bionic), existing installations will be upgraded.
 
   - [debops.phpipam] The relevant inventory variables have been renamed, check
@@ -134,6 +183,10 @@ Changed
     on Debian Stretch, since the current version of the RStudio Server works in
     the default Stretch environment. The downloaded ``.deb`` package will be
     verified using the RStudio Inc. GPG signing key before installation.
+
+  - [debops.docker_gen] The docker-gen version that this role installs by
+    default has been updated to version 0.7.4. This release notably adds IPv6
+    and docker network support.
 
 - [debops.lxc] The :command:`lxc-prepare-ssh` script will read the public SSH
   keys from specific files (``root`` key file, and the ``$SUDO_USER`` key file)
@@ -264,6 +317,37 @@ Changed
   and creating local dotfile mirrors. The :ref:`users__ref_accounts` variable
   documentation contains examples of new dotfile definitions.
 
+- [debops.users] The role now uses the ``libuser`` library via the Ansible
+  ``group`` and ``user`` modules to manage local groups and accounts. This
+  should avoid issues with groups and accounts created in the LDAP user/group
+  ranges.
+
+  The ``libuser`` library by default creates home directories with ``0700``
+  permissions, which is probably too restrictive. Because of that, the role
+  will automatically change the home directory permissions to ``0751`` (defined
+  in the :envvar:`users__default_home_mode` variable). This also affects
+  existing UNIX accounts managed by the role; the mode can be overriden using
+  the ``item.home_mode`` parameter.
+
+- [debops.users] The ``users__*_resources`` variables have been reimplemented
+  as the ``item.resources`` parameter of the ``users__*_accounts`` variables.
+  This removes the unnecessary split between user account definitions and
+  definitions of their files/directories.
+
+- Bash scripts and ``shell``/``command`` Ansible modules now use relative
+  :command:`bash` interpreter instead of an absolute :file:`/bin/bash`. This
+  should help make the DebOps roles more portable, and prepare the project for
+  the merged :file:`/bin` and :file:`/usr/bin` directories in a future Debian
+  release.
+
+- [debops.unattended_upgrades] If automatic reboots are enabled, VMs will not
+  reboot all at the same time to avoid high load on the hypervisor host.
+  Instead they will reboot at a particular minute in a 15 minute time window.
+  For each host, a random but random-but-idempotent time is chosen.
+  For hypervisor hosts good presets cannot be picked. You should ensure that
+  hosts don’t reboot at the same time by defining different reboot times in
+  inventory groups.
+
 Removed
 ~~~~~~~
 
@@ -277,6 +361,14 @@ Removed
   ``libssl1.0.0`` APT package on Debian Stretch to support older RStudio Server
   releases. You should remove it on the existing installations after RStudio
   Server is upgraded to the newest release.
+
+- The ``debops.sftpusers`` Ansible role has been removed. Its functionality is
+  now implemented by the :ref:`debops.users` role, custom bind mounts can be
+  defined using the :ref:`debops.mount` role.
+
+- The ``debops.bootstrap`` Ansible role has been removed. Its replacement is
+  the :ref:`debops.system_users` which is used to manage system administrator
+  accounts, via the ``common.yml`` playbook and the bootstrap playbooks.
 
 Fixed
 ~~~~~
@@ -593,7 +685,7 @@ Removed
   ``ansible_local.uuid`` local facts, respectively.
 
 - The hostname and domain configuration has been removed from the
-  :ref:`debops.bootstrap` role. This functionality is now handled by the
+  ``debops.bootstrap`` role. This functionality is now handled by the
   :ref:`debops.netbase` role, which has been included in the bootstrap
   playbook. The relevant inventory variables have been renamed, check the
   :ref:`upgrade_notes` for details.
@@ -805,7 +897,7 @@ Removed
   Ansible role.
 
 - [debops.bootstrap] The :command:`sudo` configuration has been removed from
-  the :ref:`debops.bootstrap` role. The ``bootstrap.yml`` playbook now includes
+  the ``debops.bootstrap`` role. The ``bootstrap.yml`` playbook now includes
   the :ref:`debops.sudo` role which configures :command:`sudo` service.
 
 - [debops.bootstrap] The UNIX system group management has been removed from the
