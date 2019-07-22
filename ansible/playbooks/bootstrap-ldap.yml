@@ -22,10 +22,12 @@
 - name: Bootstrap Python support on a host
   hosts: [ 'debops_all_hosts', 'debops_service_bootstrap' ]
   gather_facts: False
+  become: True
 
   roles:
 
     - role: debops.python/raw
+      tags: [ 'role::python_raw', 'skip::python_raw', 'role::python' ]
 
 
 - import_playbook: 'service/core.yml'
@@ -33,6 +35,7 @@
 
 - name: Bootstrap host for Ansible management with LDAP
   hosts: [ 'debops_all_hosts', 'debops_service_bootstrap' ]
+  become: True
 
   environment: '{{ inventory__environment | d({})
                    | combine(inventory__group_environment | d({}))
@@ -107,6 +110,11 @@
 
     - role: debops.nslcd
       tags: [ 'role::nslcd', 'skip::nslcd' ]
+
+    - role: debops.keyring
+      tags: [ 'role::keyring', 'skip::keyring', 'role::yadm' ]
+      keyring__dependent_gpg_keys:
+        - '{{ yadm__keyring__dependent_gpg_keys }}'
 
     - role: debops.yadm
       tags: [ 'role::yadm', 'skip::yadm' ]

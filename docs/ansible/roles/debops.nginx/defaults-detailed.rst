@@ -524,6 +524,11 @@ HTTP security headers
 
   Should cross domain policies be permitted?
 
+.. _nginx__ref_frame_options:
+
+``frame_options``
+  Optional, string. Value of the ``X-Frame-Options`` HTTP header field. Set to ``{{ omit }}``
+  to not send the header field. Defaults to ``SAMEORIGIN``.
 
 Search engine optimization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -590,10 +595,18 @@ Logging and monitoring
   Name of the access log file.
   The suffix ``.log`` will be added automatically.
 
+``access_log_enabled``
+  Optional, boolean. Defaults to ``True``.
+  If access logging should be enabled.
+
 ``error_log``
   Optional, string. Defaults to ``<``name[0]>_error``.
   Name of the error log file.
   The suffix ``.log`` will be added automatically.
+
+``error_log_enabled``
+  Optional, boolean. Defaults to ``True``.
+  If error logging should be enabled.
 
 ``access_log_format``
   Optional. Name of the access log format.

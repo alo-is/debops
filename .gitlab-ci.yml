@@ -343,15 +343,6 @@ stages:
     JANE_LOG_PATTERN: '\[debops\.dnsmasq\]'
   tags: [ 'shell', 'vagrant-vm' ]
 
-'docker role':
-  <<: *test_role_1st_deps
-  variables:
-    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/docker.yml'
-    JANE_INVENTORY_GROUPS: 'debops_service_docker'
-    JANE_DIFF_PATTERN: '.*/debops.docker/.*'
-    JANE_LOG_PATTERN: '\[debops\.docker\]'
-  tags: [ 'shell', 'vagrant-vm' ]
-
 'docker_gen role':
   <<: *test_role_no_deps
   variables:
@@ -367,6 +358,15 @@ stages:
     JANE_INVENTORY_GROUPS: 'debops_service_docker_registry'
     JANE_DIFF_PATTERN: '.*/debops.docker_registry/.*'
     JANE_LOG_PATTERN: '\[debops\.docker_registry\]'
+
+'docker_server role':
+  <<: *test_role_1st_deps
+  variables:
+    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/docker_server.yml'
+    JANE_INVENTORY_GROUPS: 'debops_service_docker_server'
+    JANE_DIFF_PATTERN: '.*/debops.docker_server/.*'
+    JANE_LOG_PATTERN: '\[debops\.docker_server\]'
+  tags: [ 'shell', 'vagrant-vm' ]
 
 'dokuwiki role':
   <<: *test_role_2nd_deps
@@ -508,18 +508,18 @@ stages:
   tags: [ 'shell', 'vagrant-vm', 'mem-6GB' ]
 
 'gitlab_runner role':
-  <<: *test_role_no_deps
+  <<: *test_role_1st_deps
   variables:
     JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/gitlab_runner.yml'
     JANE_INVENTORY_GROUPS: 'debops_service_gitlab_runner'
     JANE_DIFF_PATTERN: '.*/debops.gitlab_runner/.*'
     JANE_LOG_PATTERN: '\[debops\.gitlab_runner\]'
 
-'gitlab_runner/docker role':
+'gitlab_runner/docker_server role':
   <<: *test_role_2nd_deps
   variables:
-    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/docker.yml ${DEBOPS_PLAYBOOKS}/service/gitlab_runner.yml'
-    JANE_INVENTORY_GROUPS: 'debops_service_docker,debops_service_gitlab_runner'
+    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/docker_server.yml ${DEBOPS_PLAYBOOKS}/service/gitlab_runner.yml'
+    JANE_INVENTORY_GROUPS: 'debops_service_docker_server,debops_service_gitlab_runner'
     JANE_DIFF_PATTERN: '.*/debops.gitlab_runner/.*'
     JANE_LOG_PATTERN: '\[debops\.gitlab_runner\]'
   tags: [ 'shell', 'vagrant-vm' ]
@@ -579,7 +579,7 @@ stages:
 # --- h --- [[[2
 
 'hashicorp role':
-  <<: *test_role_no_deps
+  <<: *test_role_1st_deps
   variables:
     JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/hashicorp.yml'
     JANE_INVENTORY_GROUPS: 'debops_service_hashicorp'
@@ -588,7 +588,7 @@ stages:
     JANE_LOG_PATTERN: '\[debops\.hashicorp\]'
 
 'hwraid role':
-  <<: *test_role_no_deps
+  <<: *test_role_1st_deps
   variables:
     JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/hwraid.yml'
     JANE_INVENTORY_GROUPS: 'debops_service_hwraid'
@@ -671,6 +671,14 @@ stages:
 
 
 # --- k --- [[[2
+
+'keyring role':
+  <<: *test_role_no_deps
+  variables:
+    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/keyring.yml'
+    JANE_INVENTORY_GROUPS: 'debops_service_keyring'
+    JANE_DIFF_PATTERN: '.*/debops.keyring/.*'
+    JANE_LOG_PATTERN: '\[debops\.keyring\]'
 
 'kibana role':
   <<: *test_role_2nd_deps
@@ -868,11 +876,19 @@ stages:
 'netbox role':
   <<: *test_role_3rd_deps
   variables:
-    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/postgresql_server.yml ${DEBOPS_PLAYBOOKS}/service/netbox.yml'
-    JANE_INVENTORY_GROUPS: 'debops_service_postgresql_server,debops_service_netbox'
+    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/redis_server.yml ${DEBOPS_PLAYBOOKS}/service/postgresql_server.yml ${DEBOPS_PLAYBOOKS}/service/netbox.yml'
+    JANE_INVENTORY_GROUPS: 'debops_service_redis_server,debops_service_postgresql_server,debops_service_netbox'
     JANE_INVENTORY_HOSTVARS: 'postgresql_server__delegate_to=localhost postgresql__delegate_to=localhost'
     JANE_DIFF_PATTERN: '.*/debops.netbox/.*'
     JANE_LOG_PATTERN: '\[debops\.netbox\]'
+
+'neurodebian role':
+  <<: *test_role_1st_deps
+  variables:
+    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/neurodebian.yml'
+    JANE_INVENTORY_GROUPS: 'debops_service_neurodebian'
+    JANE_DIFF_PATTERN: '.*/debops.neurodebian/.*'
+    JANE_LOG_PATTERN: '\[debops\.neurodebian\]'
 
 'nfs role':
   <<: *test_role_no_deps
@@ -955,9 +971,6 @@ stages:
     JANE_INVENTORY_GROUPS: 'debops_service_opendkim'
     JANE_DIFF_PATTERN: '.*/debops.opendkim/.*'
     JANE_LOG_PATTERN: '\[debops\.opendkim\]'
-
-# The 'debops.openvz' role is currently not considered for Debian Stretch and
-# beyond.
 
 'owncloud/apache role':
   <<: *test_role_3rd_deps
@@ -1485,6 +1498,17 @@ stages:
     JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/users.yml'
     JANE_DIFF_PATTERN: '.*/debops.users/.*'
     JANE_LOG_PATTERN: '\[debops\.users\]'
+
+
+# --- w --- [[[2
+
+'wpcli role':
+  <<: *test_role_2nd_deps
+  variables:
+    JANE_TEST_PLAY: '${DEBOPS_PLAYBOOKS}/service/wpcli.yml'
+    JANE_INVENTORY_GROUPS: 'debops_service_wpcli'
+    JANE_DIFF_PATTERN: '.*/debops.wpcli/.*'
+    JANE_LOG_PATTERN: '\[debops\.wpcli\]'
 
 
 # --- y --- [[[2

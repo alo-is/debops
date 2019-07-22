@@ -53,13 +53,14 @@ methods.
 - :ref:`debops.golang`
 - :ref:`debops.hashicorp` - `HashiCorp`_ applications
 - :ref:`debops.java`
+- :ref:`debops.neurodebian`
 - :ref:`debops.nodejs`
 - :ref:`debops.php`
 - :ref:`debops.python`
 - :ref:`debops.ruby`
+- :ref:`debops.wpcli`
 - ``debops.hwraid``
 - ``debops.rails_deploy``
-- ``debops-contrib.neurodebian``
 
 
 Application services
@@ -242,6 +243,7 @@ packages.
 - :ref:`debops.apt_preferences`
 - :ref:`debops.apt_proxy`
 - :ref:`debops.debops_legacy`
+- :ref:`debops.keyring`
 - :ref:`debops.unattended_upgrades`
 - ``debops.reprepro``
 
@@ -254,6 +256,7 @@ Security
 - :ref:`debops.fail2ban`
 - :ref:`debops.ferm`
 - :ref:`debops.freeradius`
+- :ref:`debops.keyring`
 - :ref:`debops.pam_access`
 - :ref:`debops.proc_hidepid`
 - :ref:`debops.sshd`
@@ -275,6 +278,7 @@ System configuration
 - :ref:`debops.etc_services`
 - :ref:`debops.etckeeper`
 - :ref:`debops.ferm`
+- :ref:`debops.keyring`
 - :ref:`debops.ldap`
 - :ref:`debops.locales`
 - :ref:`debops.logrotate`
@@ -313,14 +317,13 @@ Web services
 Virtualization
 --------------
 
-- :ref:`debops.docker`
 - :ref:`debops.docker_gen`
 - :ref:`debops.docker_registry`
+- :ref:`debops.docker_server`
 - :ref:`debops.libvirt`
 - :ref:`debops.libvirtd`
 - :ref:`debops.libvirtd_qemu`
 - :ref:`debops.lxc`
-- ``debops.openvz``
 
 
 Ansible internals
@@ -332,4 +335,5 @@ additional functions to other roles.
 - :ref:`debops.ansible_plugins`
 - :ref:`debops.core`
 - :ref:`debops.debops_fact`
+- :ref:`debops.keyring`
 - :ref:`debops.secret`

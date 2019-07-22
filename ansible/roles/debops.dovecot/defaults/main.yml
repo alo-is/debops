@@ -7,7 +7,7 @@
 # .. contents:: Sections
 #    :local:
 #
-# .. include:: ../../../includes/global.rst
+# .. include:: ../../../../includes/global.rst
 
 
 # General Dovecot configuration [[[
@@ -300,6 +300,18 @@ dovecot_pop3_listeners: [ 'pop3', 'pop3s' ]
 # Custom POP3 configuration properties. See :ref:`dovecot_pop3_config_map`
 # for more details.
 dovecot_pop3_config_map: {}
+
+                                                                   # ]]]
+# .. envvar:: dovecot_sieve [[[
+#
+# Location of link to active sieve script
+dovecot_sieve: '~/.dovecot.sieve'
+
+                                                                   # ]]]
+# .. envvar:: dovecot_sieve_dir [[[
+#
+# Storage directory for sieve scripts uploaded by ManageSieve
+dovecot_sieve_dir: '~/sieve'
 
                                                                    # ]]]
 # .. envvar:: dovecot_managesieve_listeners [[[

@@ -213,8 +213,16 @@
 {%             elif nginx_access_log_format is defined                              %}
 {%                 set nginx_tpl_access_log_format = ' ' +  nginx_access_log_format %}
 {%             endif                                                                %}
+{%             if item.access_log_enabled|d(True) | bool %}
         access_log {{ (item.log_path | d(nginx_log_path)) + '/' + item.access_log | d(item.filename | d(item.name if item.name is string else item.name[0]) + '_access') }}.log{{ nginx_tpl_access_log_format }};
+{%             else %}
+        access_log off;
+{%             endif %}
+{%             if item.error_log_enabled|d(True) | bool %}
         error_log {{ (item.log_path | d(nginx_log_path)) + '/' + item.error_log | d(item.filename | d(item.name if item.name is string else item.name[0]) + '_error') }}.log;
+{%             else %}
+        error_log off;
+{%             endif %}
 {%         endif                                                                    %}
 {%     endblock                                                                     %}
 {%     block nginx_tpl_block_index                                                  %}
@@ -482,6 +490,23 @@ server {
         return {{ item.redirect_code | default(nginx_tpl_default_redirect_code) }} $scheme://$host.{{ nginx__tpl_hostname_domain }}$request_uri;
 }
 
+{%   if nginx__tpl_hostname_domain.startswith('lxc.') %}
+# Support for redirection to an internal LXC subdomain
+server {
+{%     if item.listen|d(True)                          %}
+{%       for port in nginx_tpl_listen                  %}
+        listen {{ port }};
+{%       endfor                                        %}
+
+{%       for address in nginx__tpl_hostnames | unique %}
+        server_name {{ address + '.lxc' }};
+{%       endfor                                        %}
+
+{%     endif                                           %}
+        return {{ item.redirect_code | default(nginx_tpl_default_redirect_code) }} $scheme://$host.{{ nginx__tpl_hostname_domain | regex_replace('^lxc\.','') }}$request_uri;
+}
+
+{%   endif                                             %}
 # Support for redirection via Avahi/mDNS '*.local' domain
 server {
 {%   if item.listen|d(True)                            %}

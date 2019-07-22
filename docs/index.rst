@@ -56,7 +56,7 @@ Some of the applications and services supported in DebOps are:
 You can :ref:`try out DebOps <quick_start>` without installing it on your
 computer, using Docker or Vagrant. Alternatively, a set of scripts can be
 installed on your own computer, that will let you manage multiple, separate IT
-infrastructue environments.
+infrastructure environments.
 
 .. note::
 
@@ -75,6 +75,7 @@ infrastructue environments.
 
    overview
    introduction/quick-start
+   introduction/getting-started
    introduction/faq
    introduction/community
    introduction/philosophy
@@ -163,7 +164,6 @@ infrastructue environments.
    debops-tools/index
    debops-playbooks/index
    debops-policy/index
-   philosophy
 
 ..
  Local Variables:

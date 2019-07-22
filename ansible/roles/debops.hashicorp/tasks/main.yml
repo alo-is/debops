@@ -5,12 +5,10 @@
 
 - name: Install required packages
   package:
-    name: '{{ item }}'
+    name: '{{ q("flattened", (hashicorp__base_packages
+                              + hashicorp__packages
+                              + hashicorp__dependent_packages)) }}'
     state: 'present'
-  with_flattened:
-    - '{{ hashicorp__base_packages }}'
-    - '{{ hashicorp__packages }}'
-    - '{{ hashicorp__dependent_packages }}'
   register: hashicorp__register_packages
   until: hashicorp__register_packages is succeeded
   when: (hashicorp__applications or hashicorp__dependent_applications)
@@ -90,24 +88,6 @@
   become_user: '{{ hashicorp__user }}'
   when: (hashicorp__applications or hashicorp__dependent_applications)
   block:
-
-    # OpenPGP key management [[[2
-
-    - name: Ensure user GnuPG directory exists
-      file:
-        path: '{{ hashicorp__home + "/.gnupg" }}'
-        state: 'directory'
-        mode: '0700'
-
-    - name: Import HashiCorp OpenPGP key
-      apt_key:
-        id: '{{ hashicorp__gpg_key_id | replace(" ","") }}'
-        keyring: '{{ hashicorp__home + "/.gnupg/pubring.gpg" }}'
-        keyserver: '{{ hashicorp__keyserver }}'
-        state: 'present'
-      register: hashicorp__register_apt_key
-      until: hashicorp__register_apt_key is succeeded
-
 
     # HashiCorp application archive download [[[2
 

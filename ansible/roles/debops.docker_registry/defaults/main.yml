@@ -7,7 +7,7 @@
 # .. contents:: Sections
 #    :local:
 #
-# .. include:: ../../../includes/global.rst
+# .. include:: ../../../../includes/global.rst
 
 
 # APT packages [[[
@@ -550,6 +550,18 @@ docker_registry__etc_services__dependent_list:
   - name: 'docker-registry'
     port: '{{ docker_registry__backend_port }}'
     comment: 'Docker Registry'
+
+                                                                   # ]]]
+# .. envvar:: docker_registry__keyring__dependent_gpg_keys [[[
+#
+# Configuration for the :ref:`debops.keyring` Ansible role.
+docker_registry__keyring__dependent_gpg_keys:
+
+  - user: '{{ docker_registry__user }}'
+    group: '{{ docker_registry__group }}'
+    home: '{{ docker_registry__home }}'
+    id: '{{ docker_registry__git_gpg_key }}'
+    state: '{{ "present" if docker_registry__upstream|bool else "absent" }}'
 
                                                                    # ]]]
 # .. envvar:: docker_registry__python__dependent_packages3 [[[

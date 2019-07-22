@@ -607,7 +607,6 @@
 .. _Ansible znode module: https://docs.ansible.com/ansible/znode_module.html
 .. _Ansible zypper module: https://docs.ansible.com/ansible/zypper_module.html
 .. _Ansible zypper_repository module: https://docs.ansible.com/ansible/zypper_repository_module.html
-.. _Ansible  module: https://docs.ansible.com/ansible/_module.html
 .. Deprecated modules follow:
 .. _Ansible docker module: https://docs.ansible.com/ansible/docker_module.html
 .. _Ansible ec2_ami_search module: https://docs.ansible.com/ansible/ec2_ami_search_module.html
@@ -915,10 +914,11 @@
 .. _DebOps API: https://github.com/debops/debops-api
 .. _DebOps mailing list: https://lists.debops.org/
 .. _DebOps Playbooks: https://github.com/debops/debops-playbooks/
-.. _DebOps common playbook: https://github.com/debops/debops-playbooks/blob/master/playbooks/common.yml
+.. _DebOps common playbook: https://github.com/debops/debops/blob/master/ansible/playbooks/common.yml
+.. _DebOps bootstrap playbook: https://github.com/debops/debops/blob/master/ansible/playbooks/bootstrap.yml
+.. _DebOps bootstrap-ldap playbook: https://github.com/debops/debops/blob/master/ansible/playbooks/bootstrap-ldap.yml
 .. _DebOps Documentation: https://docs.debops.org/en/latest/
 .. _DebOps Examples: https://github.com/debops/examples/
-.. _Getting Started with DebOps: https://docs.debops.org/en/latest/debops-playbooks/guides/getting-started.html
 .. _DebOps Contrib: https://github.com/debops-contrib/debops-contrib
 .. _DebOps Contrib playbooks: https://github.com/debops-contrib/debops-contrib-playbooks
 .. _DebOps Policy: https://docs.debops.org/en/latest/debops-policy/docs/index.html
@@ -1031,7 +1031,7 @@
 .. _Ubuntu: https://www.ubuntu.com/
 
 .. _Free software: https://en.wikipedia.org/wiki/Free_software
-.. _GPL-3.0: https://en.wikipedia.org/wiki/GNU_GPLv3
+.. _GPL-3.0-only: https://en.wikipedia.org/wiki/GNU_GPLv3
 .. _Open-source software: https://en.wikipedia.org/wiki/Open-source_software
 .. _Free and open-source software: https://en.wikipedia.org/wiki/Free_and_open-source_software
 
@@ -1174,7 +1174,7 @@
 .. _SOTA: https://en.wikipedia.org/wiki/State_of_the_art
 .. _HTML title tag: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/title
 
-.. _Ansible Modules: https://docs.ansible.com/ansible/modules.html
+.. _Ansible module: https://docs.ansible.com/ansible/modules.html
 .. _YAML Syntax: https://docs.ansible.com/ansible/YAMLSyntax.html
 .. _reStructuredText: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
 .. _Sphinx: http://www.sphinx-doc.org/

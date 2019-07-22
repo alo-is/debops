@@ -7,7 +7,7 @@
 # .. contents:: Sections
 #    :local:
 #
-# .. include:: ../../../includes/global.rst
+# .. include:: ../../../../includes/global.rst
 
 
 # Custom local facts [[[
@@ -219,12 +219,6 @@ core__domain: '{{ ansible_domain if ansible_domain else ansible_hostname }}'
 # The default Fully Qualified Domain Name of the host which can be used by the
 # other roles to configure network services.
 core__fqdn: '{{ ansible_fqdn }}'
-
-                                                                   # ]]]
-# .. envvar:: core__keyserver [[[
-#
-# URL for the GnuPG keyserver on which Ansible will search for encryption keys.
-core__keyserver: 'hkp://pool.sks-keyservers.net'
 
                                                                    # ]]]
 # .. envvar:: core__uuid_random [[[

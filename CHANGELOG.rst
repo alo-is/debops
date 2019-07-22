@@ -21,6 +21,27 @@ You can read information about required changes between releases in the
 Added
 ~~~~~
 
+- New DebOps roles:
+
+  - :ref:`debops.keyring` role is designed to be used by other Ansible roles to
+    manage the GPG keys, either in the APT keyring or the GPG keyrings of
+    specific UNIX accounts. It replaces and centralizes the use of the
+    ``apt_key`` and the ``apt_repository`` Ansible modules in separate roles
+    and provides additional functionality, like GPG key lookup in a local key
+    store on the Ansible Controller, or the `Keybase`__ service.
+
+    .. __: https://keybase.io/
+
+  - The ``debops-contrib.neurodebian`` Ansible role has been migrated to the
+    main DebOps role namespace as the :ref:`debops.neurodebian` role. This role
+    can be used to configure the `NeuroDebian`__ APT repository on
+    Debian/Ubuntu hosts.
+
+    .. __: http://neuro.debian.net/
+
+  - :ref:`debops.wpcli` role can be used to install the WP-CLI framework to
+    allow management of WordPress websites in a shared hosting environment.
+
 - [debops.slapd] The role can now control on which ports and services OpenLDAP
   listens for connections. The ``ldaps:///`` service is enabled by default when
   support for the :ref:`debops.pki` role is enabled on the OpenLDAP host.
@@ -28,8 +49,54 @@ Added
 - [debops.users] Readd :envvar:`users__default_shell` which was removed in
   `debops v1.0.0`_.
 
+- [ci] The Vagrant test environment will use the `libeatmydata`__ library to
+  make specific commands like :command:`apt-get`, :command:`rsync`,
+  :command:`pip`, etc. faster by avoiding excessive :man:`fsync(2)` operations.
+
+  .. __: https://www.flamingspork.com/projects/libeatmydata/
+
+- [debops.nginx] Support to disable logging per Nginx server.
+
+- [LDAP] The :file:`ldap/init-directory.yml` Ansible playbook will create an
+  LDAP group object for SSH users, equivalent to the ``sshusers`` group created
+  by the :ref:`debops.system_groups` role. LDAP accounts in this group will be
+  able to access SSH service from any host. Existing installations might need
+  to be updated manually to fix UID/GID or LDAP DN conflicts.
+
+- [debops.sysctl] The kernel protection for symlinks and hardlinks will be
+  enabled by default on Debian/Ubuntu hosts.
+
+- [debops.lxc] The :command:`lxc-prepare-ssh` script can now look up the SSH
+  keys of the current user in LDAP if support for it is enabled on the LXC
+  host.
+
+- [debops.unbound] The :command:`unbound` service will be configured to forward
+  ``*.lxc.{{ ansible_domain }}`` DNS queries to the :command:`dnsmasq` service
+  managed by the :ref:`debops.lxc` role (``lxc-net``), if LXC configuration is
+  detected via local Ansible facts. The ``*.consul`` DNS queries will be
+  forwarded to the :command:`consul` service, if its Ansible facts are
+  detected.
+
+- [debops.nginx] If a :command:`nginx` server configuration uses a domain with
+  ``lxc.`` prefix, for example inside of an internal LXC container, the role
+  will include a redirect from ``host.lxc`` "virtual" domain to the real
+  ``host.lxc.example.org`` domain. This ensures that HTTP requests to the
+  ``http://host.lxc/`` URLs are redirected to the real LXC container hosts,
+  depending on the DNS records and the HTTP client's resolver configuration.
+
 Changed
 ~~~~~~~
+
+- Updates of upstream application versions:
+
+  - [debops.netbox] The role has been updated to NetBox version ``v2.6.1``. Redis
+    service is now required for NetBox; it can be installed separately via the
+    :ref:`debops.redis_server` Ansible role.
+
+    The NetBox version installed by DebOps has been changed from using the
+    ``master`` branch, to specific tags, with the latest release (``v2.6.1``) set
+    by default. The :command:`git` commit signature in the NetBox repository is
+    also verified using the GitHub GPG key when the repository is cloned.
 
 - DebOps now uses ``xenial`` as the default OS release used in Travis-CI tests.
   The ``xenial`` images on Travis use the :command:`shellcheck` v0.6.0 to test
@@ -46,6 +113,149 @@ Changed
   account <debops.root_account>`, :ref:`any system users <debops.system_users>`
   or :ref:`regular users <debops.users>` managed by Ansible are using it as
   a login shell.
+
+- [debops.rsnapshot] The role has been redesigned from the ground up. Instead of
+  using Ansible inventory groups to define hosts to back up, role uses a list
+  of YAML dictionaries with hosts defined explicitly; the old behaviour can be
+  replicated if needed. The backup host itself can also be snapshotted, with
+  support for snapshots on removable media.
+
+- [debops.tftpd] The role has been refreshed in conjunction with the updates to
+  network boot services in preparation for Debian Buster. All of the role
+  variables have been renamed to put them in their own ``tftpd__*`` namespace,
+  and the role dependencies have been moved to the playbook.
+
+- [debops.docker] The role has been renamed to :ref:`debops.docker_server` in
+  preparation of adding a role that will provide client functionality like
+  network and container management.
+
+- [debops.netbase] Do not try to manage the hostname in LXC, Docker or OpenVZ
+  containers by default. We assume that these containers are unprivileged and
+  their hostname cannot be changed from the inside of the container.
+
+- [debops.lxc] The role now checks the version of the installed LXC support and
+  uses the old or new configuration keys accordingly. You can review the
+  `changed configuration keys`__ between the old and new LXC version for
+  comparsion.
+
+  .. __: https://discuss.linuxcontainers.org/t/lxc-2-1-has-been-released/487
+
+- [debops.lxc] New LXC containers will have the ``CAP_SYS_TIME`` POSIX
+  capability dropped by default to ensure that time configuration is disabled
+  inside of the container. This should fix an issue on Debian Buster where
+  unprivileged LXC containers still have this capability enabled.
+
+  On Debian Buster LXC hosts, the ``CAP_SYS_ADMIN`` POSIX capability will be
+  dropped in new LXC containers by default.
+
+- [debops.lxc] On Debian Buster (specifically on LXC versions below 3.1.0) the
+  AppArmor restrictions on unprivileged LXC containers will be relaxed to allow
+  correct operation of the :command:`systemd` service manager inside of
+  a container. Check the Debian Bugs `#916644`__, `#918839`__ and `#911806`__
+  for reasoning behind this modification.
+
+  .. __: https://bugs.debian.org/916644
+  .. __: https://bugs.debian.org/918839
+  .. __: https://bugs.debian.org/911806
+
+- [debops.ipxe] The role has been redesigned from scratch, and now supports
+  multiple Debian Netboot installers; the iPXE scripts are defined in default
+  variables instead of the file-based templates and can be easily modified via
+  the Ansible inventory.
+
+- Various DebOps roles have been modified to use the :ref:`debops.keyring`
+  Ansible role to manage the APT repository keys, or GPG keys on UNIX accounts.
+  If you are using them in custom playbooks, you might need to update them to
+  include the new dependency.
+
+- The installation of APT and other packages in DebOps roles has been
+  refactored to remove the use of the ``with_items``/``with_flattened``
+  lookups. Support for package installation via task loops will be removed in
+  Ansible 2.11.
+
+- The DebOps documentation generator now supports Ansible roles with multiple
+  :file:`defaults/main/*.yml` files.
+
+- [debops.kmod] The role will use the :ref:`debops.python` Ansible role to
+  install the ``kmodpy`` Python package in Python 2.7 environments. Because the
+  package is not available in Debian as Python 3.x module, the ``kmod.fact``
+  local fact script will use the :command:`lsmod` command to list the kernel
+  modules in this case.
+
+- [debops.etckeeper] The installation of :command:`etckeeper` will be disabled
+  by default in Python 3.x-only environments. See :ref:`role documentation
+  <etckeeper__ref_python3only>` for more details.
+
+- [debops.libvirt] The ``virt-goodies`` package will be installed only if the
+  Python 2.7 environment is already present on the host.
+
+- [debops.system_users] The role will set a custom shell based on the users'
+  own shell for the dynamic UNIX account only if the shell is known by the
+  role. This should avoid issues when Ansible users use non-standard shells on
+  Ansible Controller.
+
+- [debops.ifupdown] The role will not install the ``rdnssd`` APT package if
+  NetworkManager service is detected on the host, to avoid removing the NM
+  service due to `package conflict`__. NetworkManager should gracefully handle
+  adding IPv6 nameservers to :file:`/etc/resolv.conf` file, and on systems
+  without NM installed the :command:`rdnssd` script will perform this task as
+  before.
+
+  .. __: https://bugs.debian.org/740998
+
+- [debops.system_groups] Don't configure the ``NOPASSWD:`` tag for the
+  ``%admins`` and ``%wheel`` UNIX groups in :command:`sudo` by default when
+  Ansible manages the local host. This allows local admin accounts to control
+  ``root`` access using a password.
+
+- [debops.mariadb_server] The role will no longer set a custom MariaDB ``root``
+  password, because the ``mysql_user`` Ansible 2.8 module breaks access to the
+  MariaDB database via the UNIX ``root`` account by removing the
+  ``unix_socket`` plugin access and not setting the ``mysql_native_password``
+  plugin. A password for the UNIX ``root`` account is not needed in the recent
+  MariaDB releases in Debian, therefore this shouldn't impact the usage.
+
+  The ``mysql_user`` Ansible module `lacks a way to control the authentication
+  plugin for a given MariaDB account`__, therefore it's not advisable to mess
+  with the ``root`` access to the database.
+
+  .. __: https://github.com/ansible/ansible/issues/26581
+
+- [debops.unbound] The role will enable remote control management of the
+  :command:`unbound` daemon via the ``loopback`` network interface using the
+  :command:`unbound-control` command.
+
+- [ci] The Travis-CI tests will be done using Python 3.7 only. Python 2.7
+  support `will be dropped in 2020`__, it's time to prepare.
+
+  .. __: https://pythonclock.org/
+
+Removed
+~~~~~~~
+
+- [debops.lxc] The :command:`lxc-prepare-ssh` script will no longer install SSH
+  keys from the LXC host ``root`` account on the LXC container ``root``
+  account. This can cause confusion and unintended security breaches when other
+  services (for example backup scripts or remote command execution tools)
+  install their own SSH keys on the LXC host and they are subsequently
+  copied inside of the LXC containers created on that host.
+
+- [debops.core] The ``core__keyserver`` variable and its local fact have been
+  removed from the role. They are replaced by the :envvar:`keyring__keyserver`
+  and the corresponding local fact in the :ref:`debops.keyring` role.
+
+- The ``debops.openvz`` role has been removed. OpenVZ is not supported in
+  Debian natively `since Wheezy`__; a good replacement for it is LXC which can
+  be managed using the :ref:`debops.lxc` role.
+
+  .. __: https://wiki.debian.org/OpenVz
+
+Fixed
+~~~~~
+
+- [debops.python] The role should now correctly detect Python 3.x interpreter
+  on the Ansible Controller and disable usage of Python 2.7 on the managed
+  hosts.
 
 
 `debops v1.0.0`_ - 2019-05-22
@@ -561,12 +771,12 @@ Changed
   hashes in existing installations, but shouldn't affect host access (passwords
   stay the same).
 
-- [debops.docker] If the Docker host uses a local nameserver, for example
-  :command:`dnsmasq` or :command:`unbound`, Docker containers might have
-  misconfigured DNS nameserver in :file:`/etc/resolv.conf` pointing to
-  ``127.0.0.1``. In these cases, the :ref:`debops.docker` role will configure
-  Docker to use the upstream nameservers from the host, managed by the
-  ``resolvconf`` APT package.
+- [debops.docker_server] If the Docker host uses a local nameserver, for
+  example :command:`dnsmasq` or :command:`unbound`, Docker containers might
+  have misconfigured DNS nameserver in :file:`/etc/resolv.conf` pointing to
+  ``127.0.0.1``. In these cases, the :ref:`debops.docker_server` role will
+  configure Docker to use the upstream nameservers from the host, managed by
+  the ``resolvconf`` APT package.
 
   If no upstream nameservers are available, the role will not configure any
   nameserver and search parameters, which will tell Docker to use the Google

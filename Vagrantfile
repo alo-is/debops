@@ -16,7 +16,10 @@
 # Configuration variables:
 #
 #     VAGRANT_BOX="debian/stretch64"
-#         Specify the box to use.
+#         Specify the box to use for controller.
+#
+#     VAGRANT_NODE_BOX="debian/stretch64"
+#         Specify the box to use for nodes.
 #
 #     VAGRANT_HOSTNAME="stretch"
 #         Set a custom hostname after the box boots up.
@@ -33,6 +36,37 @@
 #         Configure APT to connect only over IPv4 or IPv6 network. This might
 #         be required when connectivity on either network is spotty or broken.
 
+
+$setup_eatmydata = <<SCRIPT
+set -o nounset -o pipefail -o errexit
+
+# Avoid fsync in specific tools to make testing faster.
+# We don't care about cleanup, because this is a test VM which will be
+# destroyed anyway.
+# Ref: http://people.skolelinux.org/pere/blog/Speeding_up_the_Debian_installer_using_eatmydata_and_dpkg_divert.html
+
+apt-get update
+apt-get -qy install eatmydata || true
+if [ -x "/usr/bin/eatmydata" ] ; then
+    for binary in dpkg apt-cache apt-get aptitude tasksel pip pip3 bundle bundler gem npm yarn go rsync ; do
+        filename="/usr/bin/${binary}"
+        # Test that the file exists and has not been diverted already.
+        if [ ! -f "${filename}.distrib" ] ; then
+            printf "Diverting %s using eatmydata\n" "${filename}"
+            printf "#!/bin/sh\neatmydata $binary.distrib \\"\\$@\\"\n" \
+                > "${filename}.vagrant"
+            chmod 755 "${filename}.vagrant"
+            dpkg-divert --package vagrant \
+                --rename --quiet --add "${filename}"
+            ln -sf "./${binary}.vagrant" "${filename}"
+        else
+            printf "Notice: %s is already diverted, skipping\n" "${filename}"
+        fi
+    done
+else
+    printf "Error: Unable to find /usr/bin/eatmydata after installing the eatmydata package\n"
+fi
+SCRIPT
 
 $fix_hostname_dns = <<SCRIPT
 set -o nounset -o pipefail -o errexit
@@ -94,7 +128,6 @@ ExecStart=/usr/sbin/avahi-daemon -s --no-rlimits
 EOF
 systemctl daemon-reload
 if ! type avahi-daemon > /dev/null ; then
-    apt-get -q update
     apt-get -qy install avahi-daemon avahi-utils libnss-mdns
 fi
 
@@ -126,8 +159,10 @@ if [ -d /run/systemd/system ] ; then
         printf "%s\n" "Restarting systemd-networkd.service"
         systemctl restart systemd-networkd.service
     else
-        printf "%s\n" "Restarting networking.service"
-        systemctl restart networking.service
+        printf "%s\n" "Detecting primary network interface"
+        primary_interface="$(/sbin/ip -o -0 addr | grep -v LOOPBACK | head -n1 | awk '{print $2}' | sed 's/://')"
+        printf "%s\n" "Restarting ifup@${primary_interface}.service"
+        systemctl stop "ifup@${primary_interface}.service" ; systemctl start "ifup@${primary_interface}.service"
     fi
 else
     printf "%s\n" "Restarting networking init script"
@@ -318,7 +353,6 @@ EOF
     --no-install-recommends install \
         acl \
         apt-transport-https \
-        encfs \
         git \
         haveged \
         jo \
@@ -343,6 +377,10 @@ EOF
         python-unittest2 \
         python-wheel \
         python-yaml \
+        python3 \
+        python3-apt \
+        python3-pip \
+        python3-setuptools \
         rsync \
         shellcheck \
         yamllint ${ansible_from_debian}
@@ -644,13 +682,18 @@ Vagrant.configure("2") do |config|
 
                 node.vm.box = VAGRANT_NODE_BOX
                 node.vm.hostname = node_fqdn
+                node.vm.provision "shell", inline: $setup_eatmydata,    keep_color: true
                 node.vm.provision "shell", inline: $fix_hostname_dns,   keep_color: true
                 node.vm.provision "shell", inline: $provision_node_box, keep_color: true, run: "always"
 
                 # Don't populate '/vagrant' directory on other nodes
                 node.vm.synced_folder ".", "/vagrant", disabled: true
 
-                node.vm.provider "libvirt" do |libvirt, override|
+                if ENV['VAGRANT_BOX'] || 'debian/stretch64' == 'debian/stretch64'
+                    node.ssh.insert_key = false
+                end
+
+                node.vm.provider "libvirt" do |libvirt|
                     libvirt.random_hostname = true
                     libvirt.memory = ENV['VAGRANT_NODE_MEMORY'] || '512'
                     libvirt.cpus   = ENV['VAGRANT_NODE_CPUS']   || '2'
@@ -658,12 +701,11 @@ Vagrant.configure("2") do |config|
                     if ENV['GITLAB_CI'] != "true"
                         libvirt.memory = ENV['VAGRANT_NODE_MEMORY'] || '1024'
                     end
-
-                    if ENV['VAGRANT_BOX'] || 'debian/stretch64' == 'debian/stretch64'
-                        override.ssh.insert_key = false
-                    end
                 end
 
+                node.vm.provider "virtualbox" do |virtualbox, override|
+                    override.vm.network "private_network", type: "dhcp"
+                end
             end
         end
     end
@@ -672,6 +714,7 @@ Vagrant.configure("2") do |config|
         subconfig.vm.box = ENV['VAGRANT_BOX'] || 'debian/stretch64'
         subconfig.vm.hostname = master_fqdn
 
+        subconfig.vm.provision "shell", inline: $setup_eatmydata,  keep_color: true
         subconfig.vm.provision "shell", inline: $fix_hostname_dns, keep_color: true
         subconfig.vm.provision "shell", inline: $provision_box,    keep_color: true, run: "always"
 
@@ -684,6 +727,10 @@ Vagrant.configure("2") do |config|
                 chown vagrant:vagrant /home/vagrant/.ssh/id_rsa
                 chmod 600 /home/vagrant/.ssh/id_rsa
             SHELL
+        end
+
+        if ENV['VAGRANT_BOX'] || 'debian/stretch64' == 'debian/stretch64'
+            subconfig.ssh.insert_key = false
         end
 
         subconfig.vm.provider "libvirt" do |libvirt, override|
@@ -699,10 +746,10 @@ Vagrant.configure("2") do |config|
                 libvirt.memory = ENV['VAGRANT_MASTER_MEMORY'] || '2048'
                 libvirt.cpus =   ENV['VAGRANT_MASTER_CPUS']   || '4'
             end
+        end
 
-            if ENV['VAGRANT_BOX'] || 'debian/stretch64' == 'debian/stretch64'
-                override.ssh.insert_key = false
-            end
+        subconfig.vm.provider "virtualbox" do |virtualbox, override|
+            override.vm.network "private_network", type: "dhcp"
         end
 
         if Vagrant::Util::Platform.windows? then
@@ -712,6 +759,8 @@ Vagrant.configure("2") do |config|
         elsif ENV['GITLAB_CI'] == "true"
             # We are running in a GitLab CI environment
             subconfig.vm.synced_folder ENV['CI_PROJECT_DIR'] || ".", "/vagrant"
+        else
+            subconfig.vm.synced_folder ENV['PROJECT_DIR'] || ".", "/vagrant"
         end
 
         if ENV['GITLAB_CI'] != "true"

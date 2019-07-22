@@ -11,6 +11,80 @@ perform the upgrades between different stable releases.
 Unreleased
 ----------
 
+GPG key management changes
+--------------------------
+
+The :ref:`debops.keyring` centralizes management of the APT keyring and various
+GPG keyrings in unprivileged UNIX accounts. Various DebOps roles have been
+modified to use this role instead of performing the GPG key management on their
+own. If you use custom Ansible playbooks with these roles, you will need to
+update them to include the :ref:`debops.keyring` role.
+
+List of modified DebOps roles:
+
+- :ref:`debops.ansible`
+- :ref:`debops.cran`
+- :ref:`debops.docker_registry`
+- :ref:`debops.docker_server`
+- :ref:`debops.elastic_co`
+- :ref:`debops.gitlab_runner`
+- :ref:`debops.hashicorp`
+- ``debops.hwraid``
+- :ref:`debops.icinga`
+- :ref:`debops.mariadb`
+- :ref:`debops.mariadb_server`
+- :ref:`debops.mosquitto`
+- :ref:`debops.nginx`
+- :ref:`debops.nodejs`
+- :ref:`debops.owncloud`
+- :ref:`debops.php`
+- :ref:`debops.postgresql`
+- :ref:`debops.postgresql_server`
+- :ref:`debops.rstudio_server`
+- :ref:`debops.salt`
+- :ref:`debops.yadm`
+- ``debops-contrib.bitcoind``
+- ``debops-contrib.neurodebian``
+- ``debops-contrib.x2go_server``
+
+Inventory variable changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- The :ref:`debops.rsnapshot` role has been redesigned and all of its
+  ``rsnapshot_*`` variables have been renamed to ``rsnapshot__*`` to contain
+  them in their own namespace. You will have to update your inventory.
+
+  The configuration of the hosts to back up has also been redesigned; the role
+  does not use Ansible inventory groups to define the hosts to back up
+  implicitly; you now have to explicitly specify hosts to back up using the
+  :ref:`rsnapshot__ref_hosts` variables. There is a way to replocate the
+  previous usage of inventory groups to define hosts to back up as well, see
+  the provided examples.
+
+- The ``debops.docker`` role has been renamed to :ref:`debops.docker_server`.
+  The ``docker__*`` variables have been renamed to ``docker_server__*``. You
+  will have to update your inventory variables and move all hosts to the new
+  inventory group ``[debops_service_docker_server]`` to continue using this
+  role.
+
+- The :ref:`debops.lxc` role uses different names of the container
+  configuration options depending on the LXC version used on the host. The
+  ``name`` parameters used in the configuration might change unexpectedly
+  between LXC versions, which might lead to wrong configuration entries being
+  merged and broken LXC configuration.
+
+  If you have configured :ref:`lxc__ref_configuration` variables in the Ansible
+  inventory, review them before applying the role configuration on LXC hosts.
+  You can check the :envvar:`lxc__default_configuration` variable to see which
+  ``name`` parameters can change.
+
+- The :ref:`debops.ipxe` role default variables have been renamed to move them
+  to their own ``ipxe__*`` namespace; you will have to update the Ansible
+  inventory.
+
+- The ``core__keyserver`` variable and its corresponding local fact have been
+  replaced by the :envvar:`keyring__keyserver` with a corresponding local fact.
+
 
 v1.0.0 (2019-05-22)
 -------------------
