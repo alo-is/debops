@@ -70,6 +70,10 @@
 
 - import_playbook: redis_sentinel.yml
 
+- import_playbook: minio.yml
+
+- import_playbook: mcli.yml
+
 - import_playbook: docker_registry.yml
 
 - import_playbook: reprepro.yml
@@ -89,3 +93,5 @@
 - import_playbook: prometheus_alertmanager.yml
 
 - import_playbook: freeradius.yml
+
+- import_playbook: tinyproxy.yml

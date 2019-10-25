@@ -65,6 +65,9 @@ slapd__default_schemas:
   # Support for 'eduPerson' and 'eduOrg' schema, included in DebOps
   - '{{ slapd__debops_schema_path + "/eduperson.schema" }}'
 
+  # Support for 'nextcloud' schema, included in DebOps
+  - '{{ slapd__debops_schema_path + "/nextcloud.schema" }}'
+
                                                                    # ]]]
 # .. envvar:: slapd__schemas [[[
 #
@@ -387,6 +390,7 @@ slapd__default_tasks:
         - '{6}auditlog'
         - '{7}constraint'
         - '{8}back_monitor'
+        - '{9}lastbind'
     ordered: True
 
   - name: 'Enable Sync Provider overlay in the cn=config database'
@@ -436,6 +440,12 @@ slapd__default_tasks:
     objectClass: [ 'olcOverlayConfig', 'olcConstraintConfig' ]
     attributes:
       olcOverlay: '{6}constraint'
+
+  - name: 'Enable LastBind overlay in the main database'
+    dn: 'olcOverlay={7}lastbind,olcDatabase={1}mdb,cn=config'
+    objectClass: [ 'olcOverlayConfig', 'olcLastBindConfig' ]
+    attributes:
+      olcOverlay: '{7}lastbind'
 
   - name: 'Configure Password Policy overlay in the main database'
     dn: 'olcOverlay={1}ppolicy,olcDatabase={1}mdb,cn=config'
@@ -495,6 +505,12 @@ slapd__default_tasks:
         - 'macAddress regex ^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
     state: 'exact'
 
+  - name: 'Configure LastBind overlay in the main database'
+    dn: 'olcOverlay={7}lastbind,olcDatabase={1}mdb,cn=config'
+    attributes:
+      olcLastBindPrecision: '{{ (60 * 60 * 24) }}'
+    state: 'exact'
+
   - name: 'Configure the OpenLDAP server log level'
     dn: 'cn=config'
     attributes:
@@ -510,7 +526,7 @@ slapd__default_tasks:
   - name: 'Configure password salt format used by the crypt(3) hash function'
     dn: 'cn=config'
     attributes:
-      olcPasswordCryptSaltFormat: '$6$%.16s'
+      olcPasswordCryptSaltFormat: '$6$rounds=100001$%.16s'
     state: 'exact'
 
   - name: 'Set the cn=config database root credentials'

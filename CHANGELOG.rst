@@ -21,6 +21,18 @@ You can read information about required changes between releases in the
 Added
 ~~~~~
 
+New DebOps roles
+''''''''''''''''
+
+- The :ref:`debops.minio` and :ref:`debops.mcli` Ansible roles can be used to
+  install and configure `MinIO`__ object storage service and its corresponding
+  client binary.
+
+  .. __: https://minio.io/
+
+- The :ref:`debops.tinyproxy` role can be used to set up a lightweight
+  HTTP/HTTPS proxy for an upstream server.
+
 General
 '''''''
 
@@ -49,6 +61,9 @@ LDAP
   other Ansible roles to utilize them without the need for the system
   administrator to define them by hand.
 
+- The :file:`ldap/get-uuid.yml` Ansible playbook can be used to convert LDAP
+  Distinguished Names to UUIDs to look up the password files if needed.
+
 :ref:`debops.apt_install` role
 ''''''''''''''''''''''''''''''
 
@@ -65,6 +80,25 @@ LDAP
   allow connections to internal sites and preserve the split-DNS functionality.
 
   .. __: https://support.mozilla.org/en-US/kb/canary-domain-use-application-dnsnet
+
+:ref:`debops.dokuwiki` role
+'''''''''''''''''''''''''''
+
+- The role will configure LDAP support in DokuWiki when LDAP environment
+  managed by the :ref:`debops.ldap` Ansible role is detected. Read the
+  :ref:`dokuwiki__ref_ldap_support` chapter in the documentation for more
+  details.
+
+:ref:`debops.pki` role
+''''''''''''''''''''''
+
+- Newly created PKI realms will have a new :file:`public/full.pem` file which
+  contains the full X.509 certificate chain, including the Root CA certificate,
+  which might be required by some applications that rely on TLS.
+
+  Existing PKI realms will not be modified, but Ansible roles that use the PKI
+  infrastructure might expect the new files to be present. It is advisable to
+  recreate the PKI realms when possible, or create the missing files manually.
 
 :ref:`debops.saslauthd` role
 ''''''''''''''''''''''''''''
@@ -84,6 +118,14 @@ LDAP
   :ref:`debops.saslauthd` Ansible role. Both humans and machines can
   authenticate to the OpenLDAP directory using their respective LDAP objects.
 
+- The :ref:`lastbind overlay <slapd__ref_lastbind_overlay>` will be enabled by
+  default. This overlay records the timestamp of the last successful bind
+  operation of a given LDAP object, which can be used to, for example, check
+  the date of the last successful login of a given user account.
+
+- Add support for :ref:`nextcloud LDAP schema <slapd__ref_nextcloud>` which
+  provides attributes needed to define disk quotas for Nextcloud user accounts.
+
 :ref:`debops.unbound` role
 ''''''''''''''''''''''''''
 
@@ -92,6 +134,11 @@ LDAP
   allow connections to internal sites and preserve the split-DNS functionality.
 
   .. __: https://support.mozilla.org/en-US/kb/canary-domain-use-application-dnsnet
+
+- The role will configure the :command:`unbound` daemon to allow non-recursive
+  access to DNS queries when a host is managed by Ansible locally, with
+  assumption that it's an Ansible Controller host. This change unblocks use of
+  the :command:`dig +trace` and similar commands.
 
 Changed
 ~~~~~~~
@@ -109,6 +156,15 @@ Updates of upstream application versions
 
 - In the :ref:`debops.netbox` role, the NetBox version has been updated to
   ``v2.6.3``.
+
+Continuous Integration
+''''''''''''''''''''''
+
+- The ``$DEBOPS_FROM`` environment variable can be used to select how DebOps
+  scripts should be installed in the Vagrant environment: either ``devel``
+  (local build) or ``pypi`` (installation from PyPI repository). This makes
+  Vagrant environment more useful on Windows hosts, where :file:`/vagrant`
+  directory is not mounted due to issues with symlinks.
 
 General
 '''''''
@@ -138,6 +194,20 @@ General
   documentation page for details about the required attributes and their
   values.
 
+- The GitLab project has changed its codebase structure, because of that the
+  Gitlab CE :command:`git` repository has been moved to a new location,
+  https://gitlab.com/gitlab-org/gitlab-foss/. The role has been updated
+  accordingly. Existing installations should work fine after the new codebase
+  is cloned, but if unsure, users should check the change first in
+  a development environment.
+
+  More details can be found in GitLab blog posts `here`__ and `here`__, as well
+  as the `Frequently Asked Questions`__ page.
+
+  .. __: https://about.gitlab.com/blog/2019/02/21/merging-ce-and-ee-codebases/
+  .. __: https://about.gitlab.com/blog/2019/08/23/a-single-codebase-for-gitlab-community-and-enterprise-edition/
+  .. __: https://gitlab.com/gitlab-org/gitlab/issues/13855
+
 :ref:`debops.golang` role
 '''''''''''''''''''''''''
 
@@ -145,6 +215,15 @@ General
   Go applications either from APT packages, build them from source, or download
   precompiled binaries from remote resources. See the role documentation for
   more details.
+
+:ref:`debops.ldap` role
+'''''''''''''''''''''''
+
+- The role will reset the LDAP host attributes defined in the
+  :envvar:`ldap__device_attributes` variable on first configuration in case
+  that the host has been reinstalled and some of their values changed (for
+  example different IP addresses). This should avoid leaving the outdated
+  attributes in the host LDAP object.
 
 :ref:`debops.owncloud` role
 '''''''''''''''''''''''''''
@@ -166,6 +245,16 @@ General
   documentation page for details about the required attributes and their
   values.
 
+- The default LDAP group filter configured in the
+  :envvar:`owncloud__ldap_group_filter` variable has been modified to limit the
+  available set of ``groupOfNames`` LDAP objects to only those that have the
+  ``nextcloudEnabled`` attribute set to ``true``.
+
+- Support for disk quotas for LDAP users has been added in the default
+  configuration, based on the :ref:`nextcloud LDAP schema
+  <slapd__ref_nextcloud>`. The default disk quota is set to 10 GB and can be
+  changed using the ``nextcloudQuota`` LDAP attribute.
+
 :ref:`debops.resolvconf` role
 '''''''''''''''''''''''''''''
 
@@ -186,6 +275,9 @@ General
   the :ref:`posixGroupId LDAP schema <slapd__ref_posixgroupid>`. This should
   improve performance in UNIX environments connected to the LDAP directory.
 
+- The number of rounds in SHA-512 password hashes has been increased from 5000
+  (default) to 100001. Existing password hashes will be unaffected.
+
 :ref:`debops.sshd` role
 '''''''''''''''''''''''
 
@@ -196,6 +288,13 @@ General
 
 - The role will use Ansible local facts to check if OpenSSH server package is
   installed to conditionally enable/disable its start on first install.
+
+debops-contrib.dropbear_initramfs role
+''''''''''''''''''''''''''''''''''''''
+
+- Better default value for `dropbear_initramfs__network_device` by
+  detecting the default network interface using Ansible facts instead of the
+  previously hard-coded ``eth0``.
 
 Removed
 ~~~~~~~
@@ -232,6 +331,29 @@ Fixed
   of dictionaries.
 
   .. __: https://docs.ansible.com/ansible/latest/user_guide/playbooks_python_version.html#dictionary-views
+
+Security
+~~~~~~~~
+
+:ref:`debops.nginx` role
+''''''''''''''''''''''''
+
+- Mitigation for the `CVE-2019-11043`__ vulnerability has been applied in the
+  :command:`nginx` ``php`` and ``php5`` configuration templates. The mitigation
+  is based on the `suggested workaround`__ from the PHP Bug Tracker.
+
+  .. __: https://security-tracker.debian.org/tracker/CVE-2019-11043
+  .. __: https://bugs.php.net/bug.php?id=78599
+
+:ref:`debops.owncloud` role
+'''''''''''''''''''''''''''
+
+- Security patch for the `CVE-2019-11043`__ vulnerability has been applied in
+  the Nextcloud configuration for the :ref:`debops.nginx` role. The patch is
+  based on the `fix suggested by upstream`__.
+
+  .. __: https://security-tracker.debian.org/tracker/CVE-2019-11043
+  .. __: https://nextcloud.com/blog/urgent-security-issue-in-nginx-php-fpm/
 
 
 `debops v1.1.0`_ - 2019-08-25

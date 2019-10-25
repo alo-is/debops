@@ -79,12 +79,15 @@ are not accessed directly by end users.
 - :ref:`debops.freeradius`
 - :ref:`debops.gunicorn`
 - :ref:`debops.ldap`
+- :ref:`debops.mcli`
 - :ref:`debops.memcached`
+- :ref:`debops.minio`
 - :ref:`debops.mosquitto`
 - :ref:`debops.nscd`
 - :ref:`debops.rabbitmq_management`
 - :ref:`debops.rabbitmq_server`
 - :ref:`debops.salt`
+- :ref:`debops.tinyproxy`
 - ``debops.reprepro``
 - ``debops.sks``
 - ``debops.smstools``
@@ -155,6 +158,8 @@ other hosts.
 - :ref:`debops.cryptsetup`
 - :ref:`debops.iscsi`
 - :ref:`debops.lvm`
+- :ref:`debops.mcli`
+- :ref:`debops.minio`
 - :ref:`debops.mount`
 - :ref:`debops.nfs`
 - :ref:`debops.nfs_server`
@@ -327,6 +332,7 @@ Web services
 - :ref:`debops.apache`
 - :ref:`debops.fcgiwrap`
 - :ref:`debops.gunicorn`
+- :ref:`debops.minio`
 - :ref:`debops.nginx`
 - :ref:`debops.nodejs`
 - :ref:`debops.php`
