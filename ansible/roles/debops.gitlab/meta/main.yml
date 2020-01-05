@@ -1,11 +1,6 @@
 ---
 
-dependencies:
-
-  - role: debops.secret
-    tags: [ 'role::secret' ]
-
-  - role: debops.ansible_plugins
+dependencies: []
 
 galaxy_info:
 

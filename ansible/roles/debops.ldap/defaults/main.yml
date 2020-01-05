@@ -62,7 +62,7 @@ ldap__dependent_play: '{{ True
 # .. envvar:: ldap__base_packages [[[
 #
 # List of default APT packages to install for LDAP client support.
-ldap__base_packages: [ 'libldap-common', 'ldap-utils' ]
+ldap__base_packages: [ 'libldap-common', 'ldap-utils', 'libsasl2-modules' ]
 
                                                                    # ]]]
 # .. envvar:: ldap__packages [[[
@@ -438,6 +438,58 @@ ldap__home: '/home'
 # Specify the default shell for accounts managed in LDAP using the
 # ``loginShell`` attribute.
 ldap__shell: '/bin/bash'
+
+                                                                   # ]]]
+# Host-based access control [[[
+# -----------------------------
+
+# Lists below define URN-like patterns which can be used by other Ansible roles
+# to implement host-based access control. The list of URN patterns defined on
+# a given host is available via Ansible local facts.
+# See :ref:`ldap__ref_ldap_access_host` for more details.
+#
+# The lists are flattened in the fact script, you can use an empty list to
+# enable or disable an URN pattern conditionally.
+
+# .. envvar:: ldap__default_urn_patterns [[[
+#
+# List of the URN-like patterns defined by the role.
+ldap__default_urn_patterns:
+
+  - '{{ ("deploy:" + ansible_local.machine.deployment)
+        if (ansible_local|d() and ansible_local.machine|d() and
+            ansible_local.machine.deployment|d())
+        else [] }}'
+
+                                                                   # ]]]
+# .. envvar:: ldap__urn_patterns [[[
+#
+# List of the URN-like patterns defined on all hosts in the Ansible inventory.
+ldap__urn_patterns: []
+
+                                                                   # ]]]
+# .. envvar:: ldap__group_urn_patterns [[[
+#
+# List of the URN-like patterns defined on hosts in a specific Ansible
+# inventory group.
+ldap__group_urn_patterns: []
+
+                                                                   # ]]]
+# .. envvar:: ldap__host_urn_patterns [[[
+#
+# List of the URN-like patterns defined on specific hosts in the Ansible
+# inventory.
+ldap__host_urn_patterns: []
+
+                                                                   # ]]]
+# .. envvar:: ldap__combined_urn_patterns [[[
+#
+# Variable which combines all other URN pattern lists and is used in role
+# templates.
+ldap__combined_urn_patterns: '{{ ldap__default_urn_patterns
+                                 + ldap__urn_patterns
+                                 + ldap__group_urn_patterns
+                                 + ldap__host_urn_patterns }}'
                                                                    # ]]]
                                                                    # ]]]
 # System-wide LDAP configuration [[[
@@ -607,18 +659,6 @@ ldap__admin_become: False
 # Specify the UNIX account to which perform the privilege escalation, if
 # enabled in the previous variable.
 ldap__admin_become_user: 'root'
-
-                                                                   # ]]]
-# .. envvar:: ldap__admin_auth_params [[[
-#
-# YAML dictionary that contains authentication configuration, which is passed
-# to the ``ldap_entry`` and ``ldap__attrs`` Ansible modules to configure remote
-# LDAP connections.
-ldap__admin_auth_params:
-  server_uri: '{{ ldap__admin_server_uri }}'
-  start_tls: '{{ ldap__start_tls }}'
-  bind_dn: '{{ ldap__admin_binddn }}'
-  bind_pw: '{{ ldap__fact_admin_bindpw }}'
                                                                    # ]]]
                                                                    # ]]]
 # LDAP tasks and operations [[[

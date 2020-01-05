@@ -204,7 +204,10 @@ saslauthd__ldap_default_profiles:
         value: '{{ ([ "ou=People" ] + saslauthd__ldap_base_dn) | join(",") }}'
 
       - name: 'ldap_filter'
-        value: '(&(objectClass=inetOrgPerson)(uid=%U))'
+        value: '(&
+                  (objectClass=inetOrgPerson)
+                  (uid=%U)
+                )'
 
       - name: 'ldap_scope'
         value: 'sub'
@@ -295,19 +298,22 @@ saslauthd__ldap_default_profiles:
         value: '(|
                   (&
                     (objectClass=inetOrgPerson)
-                    (uid=%U)
                     (|
-                      (authorizedService=smtpd)
-                      (authorizedService=\2a)
+                      (uid=%U)
+                      (mail=%U@%d)
+                    )
+                    (|
+                      (authorizedService=all)
+                      (authorizedService=mail:send)
                     )
                   )
                   (&
                     (objectClass=account)
                     (uid=%U)
-                    (host=%r)
+                    (host=%d)
                     (|
-                      (authorizedService=smtpd)
-                      (authorizedService=\2a)
+                      (authorizedService=all)
+                      (authorizedService=mail:send)
                     )
                   )
                 )'

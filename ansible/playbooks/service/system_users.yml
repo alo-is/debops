@@ -10,5 +10,8 @@
 
   roles:
 
+    - role: debops.libuser
+      tags: [ 'role::libuser', 'skip::libuser' ]
+
     - role: debops.system_users
       tags: [ 'role::system_users', 'skip::system_users' ]

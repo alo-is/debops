@@ -108,6 +108,7 @@
     - role: debops.ldap
       tags: [ 'role::ldap', 'skip::ldap' ]
       ldap__dependent_tasks:
+        - '{{ nullmailer__ldap__dependent_tasks }}'
         - '{{ sudo__ldap__dependent_tasks }}'
         - '{{ sshd__ldap__dependent_tasks }}'
 
@@ -130,6 +131,9 @@
 
     - role: debops.root_account
       tags: [ 'role::root_account', 'skip::root_account' ]
+
+    - role: debops.libuser
+      tags: [ 'role::libuser', 'skip::libuser' ]
 
     - role: debops.system_groups
       tags: [ 'role::system_groups', 'skip::system_groups' ]

@@ -23,9 +23,12 @@ Directory structure
           - :envvar:`cn=host.example.org <ldap__device_self_rdn>` (:envvar:`conditional <ldap__device_enabled>`)
 
             - :ref:`uid=dokuwiki <dokuwiki__ref_ldap_dit>` -> :ref:`debops.dokuwiki`
+            - :ref:`uid=dovecot <dovecot__ref_ldap_dit>` -> :ref:`debops.dovecot`
             - :ref:`uid=gitlab <gitlab__ref_ldap_dit>` -> :ref:`debops.gitlab`
             - :ref:`uid=nslcd <nslcd__ref_ldap_dit>` -> :ref:`debops.nslcd`
             - :ref:`uid=nextcloud <owncloud__ref_ldap_dit>` -> :ref:`debops.owncloud`
+            - :ref:`uid=nullmailer <nullmailer__ref_ldap_dit>` -> :ref:`debops.nullmailer`
+            - :ref:`uid=postfix <postldap__ref_ldap_dit>` -> :ref:`debops.postldap`
             - :ref:`uid=saslauthd <saslauthd__ref_ldap_dit>` -> :ref:`debops.saslauthd`
             - :ref:`uid=sshd <sshd__ref_ldap_dit>` -> :ref:`debops.sshd`
             - :ref:`uid=sudo <sudo__ref_ldap_dit>` -> :ref:`debops.sudo`

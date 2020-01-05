@@ -16,13 +16,233 @@ You can read information about required changes between releases in the
 `debops master`_ - unreleased
 -----------------------------
 
-.. _debops master: https://github.com/debops/debops/compare/v1.1.0...master
+.. _debops master: https://github.com/debops/debops/compare/v1.2.0...master
 
 Added
 ~~~~~
 
 New DebOps roles
 ''''''''''''''''
+
+- The :ref:`debops.lxd` role brings support for LXD on Debian hosts by building
+  the Go binaries from source, without Snap installation.
+
+:ref:`debops.docker_server` role
+''''''''''''''''''''''''''''''''
+
+- Add `docker_server__install_virtualenv` setting to disable python virtualvenv installation.
+
+:ref:`debops.nslcd` role
+''''''''''''''''''''''''
+
+- The role will now use a LDAP host filter by default, to allow for easy
+  control over what UNIX accounts and UNIX groups are present on which hosts
+  using the ``host`` LDAP attribute.
+
+:ref:`debops.postgresql_server` role
+''''''''''''''''''''''''''''''''''''
+
+- A given PostgreSQL server cluster can be configured to enable `standby
+  replication mode`__, and receive streaming replication data from a master
+  PostgreSQL server. See role documentation for examples.
+
+  .. __: https://www.postgresql.org/docs/current/warm-standby.html
+
+:ref:`debops.resolvconf` role
+'''''''''''''''''''''''''''''
+
+- The role can now define static DNS configuration to be merged with other DNS
+  data sources in the :file:`/etc/resolv.conf` configuration file.
+
+:ref:`debops.roundcube` role
+''''''''''''''''''''''''''''
+
+- The Roundcube installation is now more integrated with the DebOps
+  environment. The role will automatically configure :ref:`Redis
+  <debops.redis_server>` and :ref:`memcached <debops.memcached>` support if
+  they are detected on the Roundcube host, which should improve application
+  performance.
+
+- If LDAP infrastructure is detected on the host, Roundcube will be configured
+  to use the LDAP directory managed by DebOps as an address book.
+
+- The ManageSieve Roundcube plugin will be enabled by default to allow
+  configuration of Sieve filter scripts. The role will use the DNS SRV resource
+  records to find the Sieve service host and port to use.
+
+- The role can now use PostgreSQL as a database backend. The database server
+  can be managed with the :ref:`debops.postgresql_server` role.
+
+Changed
+~~~~~~~
+
+General
+'''''''
+
+- Reorder :file:`bootstrap.yml` Ansible playbook to also work for systems freshly
+  installed from CD. :ref:`debops.apt` needs to be run early to regenerate
+  :file:`/etc/apt/sources.list` which might still contain a now not functional
+  CD entry.
+
+- Most of the role dependencies have been moved either to the playbooks or to
+  the role task lists using the ``import_role`` Ansible module.
+
+Updates of upstream application versions
+''''''''''''''''''''''''''''''''''''''''
+
+- The RoundCube version installed by the :ref:`debops.roundcube` role has been
+  updated to the `1.4.1 release`__, which includes a new "Elastic" theme
+  compatible with mobile devices, and other improvements.
+
+  .. __: https://github.com/roundcube/roundcubemail/releases/tag/1.4.1
+
+LDAP
+''''
+
+- The ``authorizedService`` and ``host`` LDAP attribute values used for access
+  control in various DebOps roles and the :file:`ldap/init-directory.yml`
+  playbook have been updated and made consistent with the
+  :ref:`ldap__ref_ldap_access` documentation. You need to update the LDAP
+  entries that use them before applying these changes on the hosts managed by
+  DebOps. See :ref:`upgrade_notes` for detailed list of changed values.
+
+:ref:`debops.docker_server` role
+''''''''''''''''''''''''''''''''
+
+- Replace the deprecated `docker_server__graph` variable with the
+  :envvar:`docker_server__data_root` variable.
+
+:ref:`debops.dovecot` role
+''''''''''''''''''''''''''
+
+- The role gained support for mail accounts stored in the LDAP directory, based
+  on the :ref:`DebOps LDAP infrastructure <debops.ldap>`. When the LDAP
+  environment is detected on the host, the LDAP support will be enabled
+  automatically, and mail accounts based on POSIX accounts will be disabled.
+
+- The default mailbox format used by Dovecot has been changed from ``mbox`` to
+  Maildir; the user mailboxes will be stored by default in the
+  :file:`~/Maildir/` subdirectory of a given user account. On existing
+  installations, the mailboxes might need to be converted and moved manually.
+
+- Dovecot will use the host DNS domain as the default SASL realm when users
+  will not specify their domain in their login username.
+
+- The role should better integrate with the :ref:`DebOps PKI environment
+  <debops.pki>` and gracefully disable TLS support when it has not been
+  configured.
+
+- The firewall configuration has been redesigned and the :ref:`debops.dovecot`
+  role no longer generates the :command:`ferm` configuration files directly,
+  instead using the :ref:`debops.ferm` role as a dependency.
+
+- Add option to enable ManageSieve by default without the need to update the config_maps,
+  to allow configuration of Sieve filter scripts.
+
+- Restored :envvar:`dovecot_mail_location` to original value of `maildir:~/Maildir`. It was
+  wrongfully changed to `/var/vmail/%d/%n/mailbox` if LDAP was enabled. See also
+  :envvar:`dovecot_vmail_home`.
+
+:ref:`debops.memcached` role
+''''''''''''''''''''''''''''
+
+- All variables in the role have been renamed from ``memcached_*`` to
+  ``memcached__*`` to create the role namespace. You need to update the
+  inventory accordingly.
+
+:ref:`debops.roundcube` role
+''''''''''''''''''''''''''''
+
+- The variable that defines the FQDN address of the RoundCube installation has
+  been changed from :envvar:`roundcube__domain` to :envvar:`roundcube__fqdn`.
+  The default subdomain has also been changed from ``roundcube`` to ``webmail``
+  to offer a more widely used name for the application.
+
+- The default RoundCube installation path defined in the
+  :envvar:`roundcube__git_dest` variable has been changed and no longer
+  uses the web application FQDN. This should make changing the web application
+  address independent from the installation directory.
+
+  Due to this change, existing installations will be re-installed in the new
+  deployment path. Checking the changes in a development environment is
+  recommended before deploying them in production environment.
+
+- The role will use DNS SRV resource records to find the IMAP and/or SMTP
+  (submission) services to use in the RoundCube Webmail configuration, with
+  a fallback to static subdomains. See :ref:`roundcube__ref_srv_records` for
+  more details.
+
+- RoundCube will use the user login and password credentials to authenticate to
+  the SMTP (submission) service before sending e-mail messages. This allows the
+  SMTP server to check the message details, block mail with forged sender
+  address, etc. The default configuration uses encrypted connections to the
+  IMAP and SMTP services to ensure confidentiality and security.
+
+- User logins that don't specify a domain will have the host domain
+  automatically appended to them during authentication. This solves an issue
+  where use of logins with or without domain for authentication would result in
+  separate RoundCube profiles created in the database.
+
+- The Roundcube configuration has been redesigned and now uses the custom
+  Ansible filter plugins to generate the :file:`config/config.inc.php`
+  configuration file. The format of the configuration variables has been
+  changed, you will need to update the Ansible inventory.
+  See :ref:`roundcube__ref_configuration` for more details.
+
+- Roundcube installation tasks have been cleaned up and the old method of
+  keeping track of the :command:`git` checkout is replaced by new functionality
+  of the ``git`` Ansible module. This requires full reinstallation of Roundcube
+  application; see :ref:`upgrade_notes` for more details.
+
+- Support for Roundcube plugins has been redesigned and now uses custom Ansible
+  filters included in DebOps to manage plugins. The role can install plugins
+  from the Roundcube plugin repository and manage their configuration files.
+  A :envvar:`set of default plugins <roundcube__default_plugins>` has been
+  defined to make the default Roundcube installation a bit more user-friendly.
+
+Removed
+~~~~~~~
+
+General
+'''''''
+
+- Old ``[debops_<role_name>]`` Ansible inventory groups have been removed from
+  DebOps playbooks. Users should use the ``[debops_service_<role_name>]``
+  group names instead.
+
+Fixed
+~~~~~
+
+:ref:`debops.docker_server` role
+''''''''''''''''''''''''''''''''
+
+- Do not add empty entries from `docker_server__listen` to daemon.json.
+  This causes the docker daemon to not parse the config and crash.
+
+:ref:`debops.ferm` role
+'''''''''''''''''''''''
+
+- The ``dmz`` firewall configuration will now not interpret the port as part of
+  a IPv6 address anymore. We now protect the IPv6 address by surrounding it by
+  ``[]``.
+
+
+`debops v1.2.0`_ - 2019-12-01
+-----------------------------
+
+.. _debops v1.2.0: https://github.com/debops/debops/compare/v1.1.0...v1.2.0
+
+Added
+~~~~~
+
+New DebOps roles
+''''''''''''''''
+
+- Add :ref:`debops.postldap` Ansible role to configure and enable
+  :ref:`debops.postfix` to host multiple (virtual) domains,and thus provide
+  email service to several domains with just one `mail server`.
+  Currently the Virtual Mail support works only with **LDAP enabled**,
+  in the future `mariaDB` could be enabled.
 
 - The :ref:`debops.minio` and :ref:`debops.mcli` Ansible roles can be used to
   install and configure `MinIO`__ object storage service and its corresponding
@@ -32,6 +252,12 @@ New DebOps roles
 
 - The :ref:`debops.tinyproxy` role can be used to set up a lightweight
   HTTP/HTTPS proxy for an upstream server.
+
+- The :ref:`debops.libuser` Ansible role configures the `libuser`__ library and
+  related commands. This library is used by some of the other DebOps roles to
+  manage local UNIX accounts and groups on LDAP-enabled hosts.
+
+  .. __: https://pagure.io/libuser/
 
 General
 '''''''
@@ -53,11 +279,16 @@ General
   (:command:`view`, :command:`less`, :command:`more`) are available and use the
   best one automatically.
 
+- A new Ansible module, ``dpkg_divert``, can be used to divert the
+  configuration files out of the way to preserve them and avoid issues with
+  package upgrades. The module is available in the
+  :ref:`debops.ansible_plugins` role.
+
 LDAP
 ''''
 
 - The :file:`ldap/init-directory.yml` Ansible playbook will create the LDAP
-  obejects ``cn=LDAP Replicators`` and ``cn=Password Reset Agents`` to allow
+  objects ``cn=LDAP Replicators`` and ``cn=Password Reset Agents`` to allow
   other Ansible roles to utilize them without the need for the system
   administrator to define them by hand.
 
@@ -89,6 +320,22 @@ LDAP
   :ref:`dokuwiki__ref_ldap_support` chapter in the documentation for more
   details.
 
+:ref:`debops.cron` role
+'''''''''''''''''''''''
+
+- The execution time of the ``hourly``, ``daily``, ``weekly`` and ``monthly``
+  :command:`cron` jobs will be randomized on a per-host basis to avoid large
+  job execution spikes every morning. See the role documentation for more
+  details.
+
+:ref:`debops.nullmailer` role
+'''''''''''''''''''''''''''''
+
+- When the :ref:`LDAP environment <debops.ldap>` is configured on a host, the
+  :ref:`debops.nullmailer` role will create the service account in the LDAP
+  directory and configure the :command:`nullmailer` service to use SASL
+  authentication with its LDAP credentials to send e-mails to the relayhost.
+
 :ref:`debops.pki` role
 ''''''''''''''''''''''
 
@@ -98,7 +345,8 @@ LDAP
 
   Existing PKI realms will not be modified, but Ansible roles that use the PKI
   infrastructure might expect the new files to be present. It is advisable to
-  recreate the PKI realms when possible, or create the missing files manually.
+  :ref:`recreate the PKI realms <pki__ref_realm_renewal>` when possible, or
+  create the missing files manually.
 
 :ref:`debops.saslauthd` role
 ''''''''''''''''''''''''''''
@@ -173,7 +421,7 @@ Updates of upstream application versions
 
 - In the :ref:`debops.ipxe` role, the Debian Stretch and Debian Buster netboot
   installer versions have been updated to their next point releases, 9.10 and
-  10.1 respectively.
+  10.2 respectively.
 
 - In the :ref:`debops.netbox` role, the NetBox version has been updated to
   ``v2.6.3``.
@@ -186,6 +434,10 @@ Continuous Integration
   (local build) or ``pypi`` (installation from PyPI repository). This makes
   Vagrant environment more useful on Windows hosts, where :file:`/vagrant`
   directory is not mounted due to issues with symlinks.
+
+- The :command:`make test` command will not run the Docker tests anymore, to
+  make the default tests faster. To run the Docker tests with all other tests,
+  you can use the :command:`make test docker` command.
 
 General
 '''''''
@@ -225,6 +477,15 @@ LDAP
   The ``ou=System Groups,dc=example=dc,org`` subtree will not be created
   anymore. On existing installations this subtree will be left intact and can
   be safely removed after migration.
+
+- The access to the OpenLDAP service configured using the :ref:`debops.slapd`
+  role now requires explicit firewall and TCP Wrappers configuration to allow
+  access from trusted IP addresses and subnets. You can use the
+  ``slapd__*_allow`` variables in the Ansible inventory to specify the IP
+  addresses and subnets that can access the service.
+
+  To preserve the old behaviour of granting access by default from anywhere,
+  you can set the :envvar:`slapd__accept_any` variable to ``True``.
 
 :ref:`debops.apt_preferences` role
 ''''''''''''''''''''''''''''''''''
@@ -290,6 +551,13 @@ LDAP
   specify the intended owner, group and directory mode in the :command:`nginx`
   server configuration.
 
+:ref:`debops.nullmailer` role
+'''''''''''''''''''''''''''''
+
+- The :envvar:`nullmailer__adminaddr` list is set to empty by default to not
+  redirect all e-mail messages sent through the :command:`nullmailer` service
+  to the ``root`` account. This should be done on the relayhost instead.
+
 :ref:`debops.owncloud` role
 '''''''''''''''''''''''''''
 
@@ -326,6 +594,11 @@ LDAP
 - Support for the ``465`` TCP port for message submission over Implicit TLS is
   no longer deprecated (status changed by the :rfc:`8314` document) and will be
   enabled by default with the ``auth`` capability.
+
+- The role will configure Postfix to check the sender address of authenticated
+  mail messages and block those that don't belong to the authenticated user.
+  This will be enabled with the ``auth`` and the ``unauth-sender``
+  capabilities, and requires an user database to work correctly.
 
 :ref:`debops.postfix` role
 ''''''''''''''''''''''''''
@@ -407,6 +680,14 @@ Removed
   LDAP is to pass them in plaintext (over TLS) and let the directory server
   store them in a hashed form. See also: :rfc:`3062`.
 
+:ref:`debops.ldap` role
+'''''''''''''''''''''''
+
+- The use of the ``params`` option in the ``ldap_attrs`` and ``ldap_entry``
+  Ansible modules is deprecated due to their insecure nature. As a consequence,
+  the :ref:`debops.ldap` role has been updated to not use this option and the
+  ``ldap__admin_auth_params`` variable has been removed.
+
 :ref:`debops.nginx` role
 ''''''''''''''''''''''''
 
@@ -416,6 +697,13 @@ Removed
 
 Fixed
 ~~~~~
+
+General
+'''''''
+
+- The "Edit on GitHub" links on the role default variable pages in the
+  documentation have been fixed and now point to the correct source files on
+  GitHub.
 
 :ref:`debops.dnsmasq` role
 ''''''''''''''''''''''''''

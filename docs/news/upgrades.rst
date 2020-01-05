@@ -11,6 +11,123 @@ perform the upgrades between different stable releases.
 Unreleased
 ----------
 
+LDAP
+~~~~
+
+- The values of the ``authorizedService`` and ``host`` LDAP attributes expected
+  by various DebOps roles have been changed. You will need to update your LDAP
+  directory entries for the new values to take effect before applying these
+  changes to the remote hosts, otherwise users and services might stop working
+  correctly.
+
+  Changes in the ``authorizedService`` attribute:
+
+  =================== ========================= =================================
+  Old value           New value                 Notes
+  =================== ========================= =================================
+  \*                  all                       Grants access to all services
+  ------------------- ------------------------- ---------------------------------
+  web-public          web:public                Grants access to
+                                                publicly-reachable web services
+  ------------------- ------------------------- ---------------------------------
+  None                shell                     Grants access to UNIX environment
+                                                over SSH protocol
+  =================== ========================= =================================
+
+  Changes in the ``host`` attribute:
+
+  =================== ========================= =================================
+  Old value           New value                 Notes
+  =================== ========================= =================================
+  \*                  posix:all                 Grants access to POSIX
+                                                environment on all hosts
+  ------------------- ------------------------- ---------------------------------
+  <fqdn>              posix:<fqdn>              Grants access to POSIX
+                                                environment on a specific host
+                                                based on its FQDN
+  ------------------- ------------------------- ---------------------------------
+  \*.<domain>         posix:\*.<domain>         Grants access to POSIX
+                                                environment on a specific host
+                                                based on its domain
+  ------------------- ------------------------- ---------------------------------
+  <hostname>          Removed                   This scheme has been replaced
+                                                by a more general purpose
+                                                "URN-like" scheme. See
+                                                :ref:`ldap__ref_ldap_access_host`
+                                                for more details.
+  =================== ========================= =================================
+
+Inventory variable changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Some variables in the :ref:`debops.docker_server` role have been renamed:
+
+  +--------------------------+------------------------------------+---------------+
+  | Old variable name        | New variable name                  | Changed value |
+  +==========================+====================================+===============+
+  | ``docker_server__graph`` | :envvar:`docker_server__data_root` | No            |
+  +--------------------------+------------------------------------+---------------+
+
+- A few of the default variables in the :ref:`debops.dovecot` role have been
+  renamed. Additionally some variables related to the Sieve plugin configuration also
+  changed:
+
+  +------------------------------------+------------------------------------------+---------------+
+  | Old variable name                  | New variable name                        | Changed value |
+  +====================================+==========================================+===============+
+  | ``dovecot_ssl_protocols``          | :envvar:`dovecot_ssl_min_protocol`       | No            |
+  +------------------------------------+------------------------------------------+---------------+
+  | ``dovecot_firewall``               | Removed, see "Firewall configuration"    | No            |
+  +------------------------------------+------------------------------------------+---------------+
+  | ``dovecot_mail_location``          | :envvar:`dovecot_mail_location`          | Yes           |
+  +------------------------------------+------------------------------------------+---------------+
+  | ``dovecot_sieve``                  | :envvar:`dovecot_sieve_active_script`    | No            |
+  +------------------------------------+------------------------------------------+---------------+
+  | ``dovecot_managesieve_config_map`` | :envvar:`dovecot_managesieve_config_map` | Yes           |
+  +------------------------------------+------------------------------------------+---------------+
+  | ``dovecot_lda_config_map``         | :envvar:`dovecot_lda_config_map`         | Yes           |
+  +------------------------------------+------------------------------------------+---------------+
+
+- Some of the variables in the :ref:`debops.roundcube` role have been renamed:
+
+  +---------------------------------------+------------------------------------------+---------------------+
+  | Old variable name                     | New variable name                        | Changed value       |
+  +=======================================+==========================================+=====================+
+  | ``roundcube__default_host``           | :envvar:`roundcube__imap_server`         | No                  |
+  +---------------------------------------+------------------------------------------+---------------------+
+  | ``roundcube__domain``                 | :envvar:`roundcube__fqdn`                | Yes, a string       |
+  +---------------------------------------+------------------------------------------+---------------------+
+  | ``roundcube__local_config_map``       | :envvar:`roundcube__configuration`       | Yes                 |
+  +---------------------------------------+------------------------------------------+---------------------+
+  | ``roundcube__group_local_config_map`` | :envvar:`roundcube__group_configuration` | Yes                 |
+  +---------------------------------------+------------------------------------------+---------------------+
+  | ``roundcube__host_local_config_map``  | :envvar:`roundcube__host_configuration`  | Yes                 |
+  +---------------------------------------+------------------------------------------+---------------------+
+  | ``roundcube__git_dest``               | :envvar:`roundcube__git_dir`             | No                  |
+  +---------------------------------------+------------------------------------------+---------------------+
+  | ``roundcube__git_checkout``           | :envvar:`roundcube__git_dest`            | No                  |
+  +---------------------------------------+------------------------------------------+---------------------+
+  | :envvar:`roundcube__default_plugins`  | The same                                 | Yes, check variable |
+  +---------------------------------------+------------------------------------------+---------------------+
+
+  Due to the change in the installation method, the Roundcube installation
+  needs to be done from scratch. Before the role can work correctly, you should
+  remove (or move aside) the source and installation directories. In the
+  default setup you can run on a host:
+
+  .. code-block:: console
+
+     rm -rf /srv/www/sites/roundcube/public /usr/local/src/roundcube
+
+  This will remove the installation and source directories, after which the
+  role should be able to install Roundcube without issues. Remember to create
+  backups in case of errors, epsecially if you use the SQLite database as
+  backend since by default it is located inside of the installation directory.
+
+
+v1.2.0 (2019-12-01)
+-------------------
+
 Role configuration changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

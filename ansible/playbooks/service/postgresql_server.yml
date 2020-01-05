@@ -1,7 +1,7 @@
 ---
 
 - name: Manage PostgreSQL server
-  hosts: [ 'debops_service_postgresql_server', 'debops_postgresql_server' ]
+  hosts: [ 'debops_service_postgresql_server' ]
   become: True
 
   environment: '{{ inventory__environment | d({})
@@ -31,7 +31,7 @@
         - '{{ postgresql_server__ferm__dependent_rules }}'
 
     - role: debops.python
-      tags: [ 'role::python', 'skip::python' ]
+      tags: [ 'role::python', 'skip::python', 'role::postgresql' ]
       python__dependent_packages3:
         - '{{ postgresql_server__python__dependent_packages3 }}'
       python__dependent_packages2:

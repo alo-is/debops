@@ -88,12 +88,25 @@ def _parse_kv_value(current_data, new_data, data_index):
         old_value = current_data.get('value')
         old_state = current_data.get('state', 'present')
         new_value = new_data['value']
+        new_value_cast = new_data.get('value_cast', None)
 
-        if isinstance(new_value, (basestring, int, float, bool)):
+        if (new_value is None or
+                isinstance(new_value, (basestring, int, float, bool))):
             if (old_value is None or isinstance(old_value,
                                                 (basestring, int,
                                                  float, bool, dict))):
-                current_data['value'] = new_value
+                if new_value_cast in ['null', 'none', 'None']:
+                    current_data['value'] = None
+                elif new_value_cast in ['int', 'integer']:
+                    current_data['value'] = int(new_value)
+                elif new_value_cast in ['str', 'string']:
+                    current_data['value'] = str(new_value)
+                elif new_value_cast in ['bool', 'boolean']:
+                    current_data['value'] = bool(new_value)
+                elif new_value_cast == 'float':
+                    current_data['value'] = float(new_value)
+                else:
+                    current_data['value'] = new_value
 
             # TODO(drybjed): This never evaluates to true.
             #  if (old_value is not None and old_state in ['comment'] and
@@ -101,7 +114,7 @@ def _parse_kv_value(current_data, new_data, data_index):
             #      current_data['state'] = 'present'
 
         elif isinstance(new_value, list):
-            if (old_value is None or isinstance(old_value, dict)):
+            if isinstance(old_value, dict):
                 dict_value = current_data.get('value', {}).copy()
             else:
                 dict_value = {}
@@ -541,6 +554,8 @@ if __name__ == '__main__':
               value: 'test2'
             - name: 'local'
               value: 'test3'
+            - name: 'local_null'
+              value: null
             '''))
 
             expected_items = yaml.safe_load(textwrap.dedent('''
@@ -559,6 +574,14 @@ if __name__ == '__main__':
               separator: false
               state: present
               value: test2
+              weight: 0
+            - id: 30
+              name: local_null
+              real_weight: 30
+              section: unknown
+              separator: false
+              state: present
+              value: null
               weight: 0
             '''))
 
@@ -581,6 +604,37 @@ if __name__ == '__main__':
               section: unknown
               separator: false
               state: present
+              weight: 0
+            '''))
+
+            items = parse_kv_config(input_items)
+
+            #  print(yaml.dump(items, default_flow_style=False))
+            #  print(yaml.dump(expected_items, default_flow_style=False))
+
+            self.assertEqual(items, expected_items)
+
+        def test_parse_kv_config_null_to_list(self):
+            input_items = yaml.safe_load(textwrap.dedent('''
+            - name: 'local'
+              value: null
+            - name: 'local'
+              value: ['test1']
+            '''))
+
+            expected_items = yaml.safe_load(textwrap.dedent('''
+            - id: 0
+              name: local
+              real_weight: 0
+              section: unknown
+              separator: false
+              state: present
+              value:
+              - id: 0
+                name: test1
+                real_weight: 0
+                state: present
+                weight: 0
               weight: 0
             '''))
 

@@ -1,5 +1,8 @@
 ---
 
+- import_role:
+    name: 'debops.secret'
+
 - name: Get default PostgreSQL version
   environment:
     LC_ALL: 'C'
@@ -8,6 +11,7 @@
   args:
     executable: 'bash'
   register: postgresql__register_version
+  check_mode: False
   changed_when: False
 
 - name: Set default PostgreSQL version variable
@@ -37,6 +41,7 @@
     executable: 'bash'
   register: postgresql__register_server
   changed_when: False
+  check_mode: False
   failed_when: False
 
 - name: Configure system-wide user to cluster mapping

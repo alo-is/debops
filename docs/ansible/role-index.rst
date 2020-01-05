@@ -210,6 +210,7 @@ Mail services
 - :ref:`debops.opendkim`
 - :ref:`debops.postconf`
 - :ref:`debops.postfix`
+- :ref:`debops.postldap`
 - :ref:`debops.postscreen`
 - :ref:`debops.postwhite`
 - :ref:`debops.roundcube`
@@ -280,6 +281,7 @@ Security
 - :ref:`debops.ferm`
 - :ref:`debops.freeradius`
 - :ref:`debops.keyring`
+- :ref:`debops.libuser`
 - :ref:`debops.pam_access`
 - :ref:`debops.proc_hidepid`
 - :ref:`debops.sshd`
@@ -348,6 +350,7 @@ Virtualization
 - :ref:`debops.libvirtd`
 - :ref:`debops.libvirtd_qemu`
 - :ref:`debops.lxc`
+- :ref:`debops.lxd`
 
 
 Ansible internals

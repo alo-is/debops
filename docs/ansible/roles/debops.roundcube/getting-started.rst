@@ -15,8 +15,58 @@ Default setup
 
 If you don't specify any configuration values, the role will setup a Nginx_
 HTTP server running a default installation of the latest Roundcube stable
-release which is then accessible via ``https://roundcube.<your-domain>``.
+release which is then accessible via ``https://webmail.<your-domain>``.
 SQLite is used as database backend for storing the user settings.
+
+When the :ref:`LDAP infrastructure <debops.ldap>` is detected on the Roundcube
+host, the role will install and configure LDAP support in Roundcube. The
+default address book will be configured to allow only searches in the
+directory, which is benefical in larger environments.
+
+Roundcube will use the current user credentials to login to the LDAP directory,
+therefore access to the LDAP entries and attributes depends on the LDAP ACL
+configuration in the directory itself.
+
+
+.. _roundcube__ref_srv_records:
+
+IMAP, SMTP and Sieve server detection
+-------------------------------------
+
+The role detects the preferred IMAP, SMTP and Sieve servers by checking the DNS
+SRV resource records (as defined by the :rfc:`6186` and :rfc:`5804`), looking
+for the IMAPS and SMTPS (submission) service recommended by the :rfc:`8314`
+using Implicit TLS. The example DNS resource records checked by the role:
+
+.. code-block:: none
+
+   _imaps._tcp          SRV 0 1 993  imap.example.org.
+   _submissions._tcp    SRV 0 1 465  smtp.example.org.
+   _sieve._tcp          SRV 0 1 4190 sieve.example.org.
+
+At the moment only a single SRV resource record is supported by the role.
+
+If the above SRV resource records are not available, the
+:ref:`debops.roundcube` role will check for the presence of the
+:ref:`debops.dovecot` and the :ref:`debops.postfix` role Ansible local facts on
+the host. If they are found, the respective service (IMAP, SMTP (submission)
+and/or Sieve) will be configured to be accessed via the host's own FQDN address
+to support X.509 certificate verification. In this case the services will also
+use Implicit TLS (ports 993 and 465 respectively).
+
+If both SRV resource records and local Ansible facts are not available, the
+:ref:`debops.roundcube` role will fall back to using static subdomains for the
+respective services, based on the host domain:
+
+.. code-block:: none
+
+   IMAP:  imap.example.org
+   SMTP:  smtp.example.org
+   Sieve: sieve.example.org
+
+This allows for deployment of the RoundCube Webmail independent from the
+respective services, for example on a separate host or VM. The communication
+with the mail services will be encrypted by default using Implicit TLS.
 
 
 .. _roundcube__ref_example_inventory:
@@ -25,12 +75,31 @@ Example inventory
 -----------------
 
 To install and configure Roundcube on a host, it needs to be present in the
-``[debops_service_roundcube]`` Ansible inventory group:
+``[debops_service_roundcube]`` Ansible inventory group. Additional services
+like :ref:`memcached <debops.memcached>`, :ref:`Redis <debops.redis_server>`,
+:ref:`MariaDB <debops.mariadb_server>` and
+:ref:`PostgreSQL <debops.postgresql_server>` can help increase the website
+performance.
 
 .. code-block:: none
 
-    [debops_service_roundcube]
-    hostname
+   [debops_all_hosts]
+   webmail
+
+   [debops_service_mariadb_server]
+   webmail
+
+   [debops_service_memcached]
+   webmail
+
+   [debops_service_postgresql_server]
+   webmail
+
+   [debops_service_redis_server]
+   webmail
+
+   [debops_service_roundcube]
+   webmail
 
 
 .. _roundcube__ref_example_playbook:

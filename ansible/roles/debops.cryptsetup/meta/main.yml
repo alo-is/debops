@@ -1,10 +1,6 @@
 ---
 
-dependencies:
-
-  - role: debops.secret
-    tags: [ 'depend::secret', 'depend::secret:cryptsetup',
-            'depend-of::cryptsetup', 'type::dependency:hard' ]
+dependencies: []
 
 galaxy_info:
 
